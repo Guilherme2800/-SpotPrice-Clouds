@@ -25,7 +25,7 @@ import com.finops.spotprice.model.InstancesAzure;
 import com.finops.spotprice.model.SpotAzure;
 
 @RestController("/spot")
-public class SpotController {
+public class SpotControllerAPI {
 
 	@Autowired
 	private SpotRepository spotRepository;
@@ -41,32 +41,7 @@ public class SpotController {
 		spotRepository.save(spot);
 	}
 
-	
-	public void enviarAzure() {
-
-		EnviarAzure azure = new EnviarAzure();
-		azure.enviar();
-
-	}
-	
-	public void enviarAws(){
-		
-		int numero=0;
-		
-		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
-		DescribeRegionsResult regions_response = ec2.describeRegions();
-
-		System.out.println("Iniciando Envio da AWS...");
-
-		for (Region region : regions_response.getRegions()) {
-			System.out.println("\n--------Enviando região: " + region.getRegionName() + "----------");
-			numero++;
-			EnviarAws enviar = new EnviarAws();
-			enviar.enviarObjeto(region.getRegionName());
-			System.out.println("\n--------Conteúdo Enviado----------");
-		}
-
-		System.out.println("Finalizado Envio da AWS..." + numero);
-	}
 
 }
+	
+	
