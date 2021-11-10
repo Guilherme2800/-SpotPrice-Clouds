@@ -29,12 +29,12 @@ public class SpotController {
 		return spotRepository.findAll();
 	}
 
-	/*
+	
 	@PostMapping("/inserirAzure")
 	public void inserirAzure(@RequestBody InstancesAzure spot) {
 		spotRepository.save(spot);
 	}
-*/
+
 	
 	public void enviarAzure() {
 
