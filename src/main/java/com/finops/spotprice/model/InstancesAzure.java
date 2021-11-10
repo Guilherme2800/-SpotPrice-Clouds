@@ -1,6 +1,5 @@
 package com.finops.spotprice.model;
 
-
 import java.io.Serializable;
 
 import javax.persistence.Basic;
