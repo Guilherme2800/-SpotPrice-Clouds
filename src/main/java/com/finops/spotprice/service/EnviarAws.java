@@ -28,7 +28,7 @@ public class EnviarAws {
 	private final long HORA = MINUTO * 60;
 
 	@Scheduled(fixedDelay = MINUTO * 8)
-	public void enviarObjeto() {
+	public void correrRegioes() {
 
 		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
 		DescribeRegionsResult regions_response = ec2.describeRegions();
