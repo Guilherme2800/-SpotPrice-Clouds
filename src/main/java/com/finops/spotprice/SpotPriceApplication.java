@@ -13,7 +13,7 @@ public class SpotPriceApplication {
 		SpringApplication.run(SpotPriceApplication.class, args);
 		
 		SpotController spot = new SpotController();
-		spot.enviarAzure();
+		spot.enviarAws();
 	}
 
 }
