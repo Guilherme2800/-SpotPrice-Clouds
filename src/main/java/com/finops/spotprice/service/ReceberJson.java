@@ -51,7 +51,7 @@ public class ReceberJson {
 			}
 
 			if (contadorErro == 5) {
-				System.out.println("Não foi possível completar o envio da AZURE");
+				System.out.println("A URL não está respondendo a requisição.");
 				semErro = true;
 			}
 
