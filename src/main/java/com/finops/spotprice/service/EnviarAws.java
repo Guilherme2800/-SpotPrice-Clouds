@@ -8,14 +8,43 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
+import com.amazonaws.services.ec2.model.DescribeRegionsResult;
 import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryRequest;
 import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryResult;
+import com.amazonaws.services.ec2.model.Region;
 
+@Component
+@EnableScheduling
 public class EnviarAws {
 
-	public void enviarObjeto(String regiao) {
+	private final long SEGUNDO = 1000;
+	private final long MINUTO = SEGUNDO * 60;
+	private final long HORA = MINUTO * 60;
+
+	@Scheduled(fixedDelay = MINUTO * 8)
+	public void correrRegioes() {
+
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
+		DescribeRegionsResult regions_response = ec2.describeRegions();
+
+		System.out.println("Iniciando Envio da AWS...");
+
+		for (Region region : regions_response.getRegions()) {
+			System.out.println("\n--------Enviando região: " + region.getRegionName() + "----------");
+			enviarParaBanco(region.getRegionName());
+			System.out.println("\n--------Conteúdo Enviado----------");
+		}
+
+		System.out.println("Finalizado Envio da AWS...");
+	}
+
+	private void enviarParaBanco(String regiao) {
 
 		// conecta com BD
 		ConexaoMariaDb conexao = new ConexaoMariaDb();
@@ -56,7 +85,7 @@ public class EnviarAws {
 
 				for (int i = 0; i < response.getSpotPriceHistory().size(); i++) {
 
-					if (response.getSpotPriceHistory().get(i).getAvailabilityZone().toLowerCase().endsWith("a")){
+					if (response.getSpotPriceHistory().get(i).getAvailabilityZone().toLowerCase().endsWith("a")) {
 
 						pstm.setString(1, response.getSpotPriceHistory().get(i).getAvailabilityZone());
 						pstm.setString(2, response.getSpotPriceHistory().get(i).getInstanceType());
