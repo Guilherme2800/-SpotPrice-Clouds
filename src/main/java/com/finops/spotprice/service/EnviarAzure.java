@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 import com.finops.spotprice.model.InstancesAzure;
 import com.finops.spotprice.model.SpotAzure;
-import com.finops.spotprice.repository.SpotRepository;
+import com.finops.spotprice.repository.SpotAzureRepository;
 
 //@Component
 //@EnableScheduling
