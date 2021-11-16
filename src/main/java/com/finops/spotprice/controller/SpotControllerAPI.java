@@ -30,12 +30,6 @@ public class SpotControllerAPI {
 	}
 
 	
-	@PostMapping("/inserirAzure")
-	public void inserirAzure(@RequestBody InstancesAzure spot) {
-		azureRepository.save(spot);
-	}
-
-	
 	//-------AWS--------
 
 	@Autowired
