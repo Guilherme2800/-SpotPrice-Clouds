@@ -27,7 +27,7 @@ public class EnviarAws {
 	private final long MINUTO = SEGUNDO * 60;
 	private final long HORA = MINUTO * 60;
 
-	@Scheduled(fixedDelay = MINUTO * 8)
+	//@Scheduled(fixedDelay = MINUTO * 8)
 	public void correrRegioes() {
 
 		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
@@ -74,8 +74,8 @@ public class EnviarAws {
 
 			DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
-			pstm = con.prepareStatement("insert into aws (availabilityZone, instanceType,"
-					+ "productDescription, spotPrice, timeStam_p) values (?, ?, ?, ?, ?)");
+			pstm = con.prepareStatement("insert into aws (availability_zone, instance_type,"
+					+ "product_description, spot_price, time_stamp) values (?, ?, ?, ?, ?)");
 
 			System.out.println("\nEnviando Região " + regiao + " para o banco de dados");
 
