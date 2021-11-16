@@ -72,10 +72,10 @@ public class EnviarAws {
 
 			DescribeSpotPriceHistoryResult response = client.describeSpotPriceHistory(request);
 
-			DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
-			pstm = con.prepareStatement("insert into aws (availability_zone, instance_type,"
-					+ "product_description, spot_price, time_stamp) values (?, ?, ?, ?, ?)");
+			pstm = con.prepareStatement("insert into spotprices (cloud_name, instance_type,"
+					+ "region, product_description, price, data_req) values (?, ?, ?, ?, ?, ?)");
 
 			System.out.println("\nEnviando Região " + regiao + " para o banco de dados");
 
@@ -87,11 +87,12 @@ public class EnviarAws {
 
 					if (response.getSpotPriceHistory().get(i).getAvailabilityZone().toLowerCase().endsWith("a")) {
 
-						pstm.setString(1, response.getSpotPriceHistory().get(i).getAvailabilityZone());
+						pstm.setString(1, "AWS");
 						pstm.setString(2, response.getSpotPriceHistory().get(i).getInstanceType());
-						pstm.setString(3, response.getSpotPriceHistory().get(i).getProductDescription());
-						pstm.setString(4, response.getSpotPriceHistory().get(i).getSpotPrice());
-						pstm.setString(5, dateFormat.format(response.getSpotPriceHistory().get(i).getTimestamp()));
+						pstm.setString(3, regiao);
+						pstm.setString(4, response.getSpotPriceHistory().get(i).getProductDescription());
+						pstm.setString(5, response.getSpotPriceHistory().get(i).getSpotPrice());
+						pstm.setString(6, dateFormat.format(response.getSpotPriceHistory().get(i).getTimestamp()));
 
 						pstm.execute();
 
