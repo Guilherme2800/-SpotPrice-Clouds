@@ -2,6 +2,7 @@ package com.finops.spotprice.service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -18,6 +19,7 @@ import com.amazonaws.services.ec2.model.DescribeRegionsResult;
 import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryRequest;
 import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryResult;
 import com.amazonaws.services.ec2.model.Region;
+import com.amazonaws.services.ec2.model.SpotPrice;
 
 @Component
 @EnableScheduling
@@ -47,10 +49,10 @@ public class EnviarAws {
 	private void enviarParaBanco(String regiao) {
 
 		// conecta com BD
-		ConexaoMariaDb conexao = new ConexaoMariaDb();
+		ConexaoMariaDb objetoMariaDb = new ConexaoMariaDb();
 
 		// recebe a conexão
-		Connection con = conexao.conectar();
+		Connection conexao = objetoMariaDb.conectar();
 
 		// Objeto que prepara o código SQL
 		PreparedStatement pstm = null;
@@ -70,41 +72,77 @@ public class EnviarAws {
 			request = new DescribeSpotPriceHistoryRequest().withEndTime(sdf.parse(sdf.format(data)))
 					.withStartTime(sdf.parse(sdf.format(data)));
 
-			DescribeSpotPriceHistoryResult response = client.describeSpotPriceHistory(request);
+			DescribeSpotPriceHistoryResult arrayInstanciasAws = client.describeSpotPriceHistory(request);
 
 			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-
-			pstm = con.prepareStatement("insert into spotprices (cloud_name, instance_type,"
-					+ "region, product_description, price, data_req) values (?, ?, ?, ?, ?, ?)");
 
 			System.out.println("\nEnviando Região " + regiao + " para o banco de dados");
 
 			boolean proximo = true;
 
+			// Esse While controla se tem uma proxima pagina de dados a carregar
 			while (proximo) {
 
-				for (int i = 0; i < response.getSpotPriceHistory().size(); i++) {
+				// percorre o array de instancias da AWS
+				for (SpotPrice spot : arrayInstanciasAws.getSpotPriceHistory()) {
 
-					if (response.getSpotPriceHistory().get(i).getAvailabilityZone().toLowerCase().endsWith("a")) {
+					// Verifica se a região é do tipo A
+					if (spot.getAvailabilityZone().toLowerCase().endsWith("a")) {
 
-						pstm.setString(1, "AWS");
-						pstm.setString(2, response.getSpotPriceHistory().get(i).getInstanceType());
-						pstm.setString(3, regiao);
-						pstm.setString(4, response.getSpotPriceHistory().get(i).getProductDescription());
-						pstm.setString(5, response.getSpotPriceHistory().get(i).getSpotPrice());
-						pstm.setString(6, dateFormat.format(response.getSpotPriceHistory().get(i).getTimestamp()));
+						// Select para verificar se já existe esse dado no banco de dados
+						pstm = conexao.prepareStatement(
+								"select * from spotprices where cloud_name = 'aws' and instance_type = '"
+										+ spot.getInstanceType() + "'" + "and region = '" + regiao
+										+ "' and product_description = '" + spot.getProductDescription() + "' ");
 
-						pstm.execute();
+						ResultSet resultadoSelect;
+						resultadoSelect = pstm.executeQuery();
 
+						// Se o dado já estar no banco de dados, entra no IF
+						if (resultadoSelect.next()) {
+
+							// Insere o dado atual na tabela de historico
+							pstm = conexao.prepareStatement(
+									"insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
+
+							pstm.setString(1, resultadoSelect.getString("cod_spot"));
+							pstm.setString(2, resultadoSelect.getString("price"));
+							pstm.setString(3, resultadoSelect.getString("data_req"));
+
+							pstm.execute();
+
+							// Atualiza o dado atual com a nova data e preco
+							pstm = conexao.prepareStatement(
+									"update spotprices set price = ?, data_req = ? where cod_spot = ?");
+							pstm.setString(1, spot.getSpotPrice());
+							pstm.setString(2, dateFormat.format(spot.getTimestamp()));
+							pstm.setString(3, resultadoSelect.getString("cod_spot"));
+
+							pstm.execute();
+
+						} else {
+							// Se o dado não existir, insere ele no banco de dados
+							pstm = conexao.prepareStatement("insert into spotprices (cloud_name, instance_type,"
+									+ "region, product_description, price, data_req) values (?, ?, ?, ?, ?, ?)");
+
+							pstm.setString(1, "AWS");
+							pstm.setString(2, spot.getInstanceType());
+							pstm.setString(3, regiao);
+							pstm.setString(4, spot.getProductDescription());
+							pstm.setString(5, spot.getSpotPrice());
+							pstm.setString(6, dateFormat.format(spot.getTimestamp()));
+
+							pstm.execute();
+						}
 					}
 				}
 
-				if (response.getSpotPriceHistory().size() < 1000) {
+				if (arrayInstanciasAws.getSpotPriceHistory().size() < 1000) {
 					proximo = false;
 				}
 
-				request.setNextToken(response.getNextToken());
-				response = client.describeSpotPriceHistory(request);
+				request.setNextToken(arrayInstanciasAws.getNextToken());
+				arrayInstanciasAws = client.describeSpotPriceHistory(request);
 
 			}
 
@@ -116,7 +154,7 @@ public class EnviarAws {
 			e.printStackTrace();
 		}
 
-		conexao.desconectar();
+		objetoMariaDb.desconectar();
 
 	}
 

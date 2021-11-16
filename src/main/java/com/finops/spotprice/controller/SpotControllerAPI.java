@@ -40,9 +40,9 @@ public class SpotControllerAPI {
 		return awsRepository.findAll();
 	}
 
-	@GetMapping("/listarAws/regiao/{Regiao}")
+	@GetMapping("/listarAws/regiao/{regiao}")
 	public List<InstancesAws> listarAwsRegiao(@PathVariable String regiao){
-		return awsRepository.findByavailabilityZone(regiao);
+		return awsRepository.findByregion(regiao);
 	}
 	
 	@GetMapping("/listarAws/tipoInstancia/{tipoInstancia}")

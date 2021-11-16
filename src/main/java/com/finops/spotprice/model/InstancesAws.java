@@ -11,15 +11,15 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table (name = "aws")
+@Table (name = "spotprices")
 public class InstancesAws {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long id;
+	Long cod_spot;
 	
-	@Column(name = "availability_zone")
-	private String availabilityZone;
+	@Column(name = "region")
+	private String region;
 	
 	@Column(name = "instance_type")
 	private String instanceType;
@@ -27,10 +27,10 @@ public class InstancesAws {
 	@Column(name = "product_description")
 	private String productDescription;
 	
-	@Column(name = "spot_price")
-	private double spotPrice;
+	@Column(name = "price")
+	private double price;
 	
-	@Column(name = "time_stamp")
-	private String timeStamp;
+	@Column(name = "data_req")
+	private String dataReq;
 	
 }

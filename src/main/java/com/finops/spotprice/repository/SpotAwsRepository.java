@@ -10,7 +10,7 @@ import com.finops.spotprice.model.InstancesAws;
 @Repository
 public interface SpotAwsRepository extends JpaRepository<InstancesAws, Long>{
 
-   List<InstancesAws> findByavailabilityZone(String availabilityZone);
+   List<InstancesAws> findByregion(String region);
    List<InstancesAws> findByinstanceType(String instanceType);
 	
 }
