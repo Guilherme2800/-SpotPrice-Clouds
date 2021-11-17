@@ -15,9 +15,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.finops.spotprice.model.InstancesAzure;
 import com.finops.spotprice.model.SpotAzure;
-import com.finops.spotprice.repository.SpotAzureRepository;
+import com.finops.spotprice.model.SpotAzureArray;
 
 //@Component
 //@EnableScheduling
@@ -47,7 +46,7 @@ public class EnviarAzure {
 	public void enviar() {
 
 		// Recebe o json convertido
-		SpotAzure azureSpot = converter.converter(
+		SpotAzureArray azureSpot = converter.converter(
 				"https://prices.azure.com/api/retail/prices?$skip=0&$filter=serviceName%20eq%20%27Virtual%20Machines%27%20and%20priceType%20eq%20%27Consumption%27%20and%20endswith(meterName,%20%27Spot%27)%20and%20effectiveStartDate%20eq%20"
 						+ formatarDate.format(data) + "-01");
 
@@ -59,7 +58,7 @@ public class EnviarAzure {
 
 			while (proximo) {
 
-				for (InstancesAzure spot : azureSpot.getItems()) {
+				for (SpotAzure spot : azureSpot.getItems()) {
 
 					if (spot.getUnitPrice() != 0) {
 						

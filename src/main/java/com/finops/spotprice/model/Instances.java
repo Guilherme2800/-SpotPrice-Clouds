@@ -12,7 +12,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table (name = "spotprices")
-public class InstancesAws {
+public class Instances {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +20,9 @@ public class InstancesAws {
 	
 	@Column(name = "region")
 	private String region;
+	
+	@Column(name = "cloud_name")
+	private String cloudName;
 	
 	@Column(name = "instance_type")
 	private String instanceType;

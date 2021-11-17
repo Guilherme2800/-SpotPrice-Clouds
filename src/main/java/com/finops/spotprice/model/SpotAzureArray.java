@@ -8,7 +8,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class SpotAzure{
+public class SpotAzureArray{
 	
 	String billingCurrency;
 	String CustomerEntityId;	
@@ -16,6 +16,6 @@ public class SpotAzure{
 	String NextPageLink;	
 	int Count;
 	
-	public List<InstancesAzure> Items = new ArrayList<InstancesAzure>();
+	public List<SpotAzure> Items = new ArrayList<SpotAzure>();
 	
 }

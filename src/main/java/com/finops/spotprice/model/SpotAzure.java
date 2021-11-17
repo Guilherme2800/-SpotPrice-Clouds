@@ -1,37 +1,19 @@
 package com.finops.spotprice.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
 import lombok.Data;
 
 @Data
-@Entity
-@Table(name = "spotprices")
-public class InstancesAzure {
+public class SpotAzure {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long cod_spot;
+	private String location;
 
-	@Column(name = "region")
-	String location;
+	private double unitPrice;
 
-	@Column(name = "price")
-	double unitPrice;
+	private String effectiveStartDate;
 
-	@Column(name = "data_req")
-	String effectiveStartDate;
+	private String productName;
 
-	@Column(name = "product_description")
-	String productName;
-
-	@Column(name = "instance_type")
-	String skuName;
+	private String skuName;
 
 	/*
 	 * String currencyCode;

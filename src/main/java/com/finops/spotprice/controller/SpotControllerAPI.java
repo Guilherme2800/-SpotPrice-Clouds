@@ -10,44 +10,35 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.finops.spotprice.repository.SpotAwsRepository;
-import com.finops.spotprice.repository.SpotAzureRepository;
-import com.finops.spotprice.model.InstancesAws;
-import com.finops.spotprice.model.InstancesAzure;
-
+import com.finops.spotprice.repository.SpotRepository;
+import com.finops.spotprice.model.Instances;
 
 @RestController("/spot")
 public class SpotControllerAPI {
 
-	//------AZURE------
-	
-	@Autowired
-	private SpotAzureRepository azureRepository;
-
-	@GetMapping("/listarAzure")
-	public List<InstancesAzure> listarAzure() {
-		return azureRepository.findAll();
-	}
-
-	
-	//-------AWS--------
 
 	@Autowired
-	private SpotAwsRepository awsRepository;
+	private SpotRepository repository;
 	
-	@GetMapping("/listarAws")
-	public List<InstancesAws> listarAws(){
-		return awsRepository.findAll();
+	@GetMapping("/listar")
+	public List<Instances> listar(){
+		return repository.findAll();
 	}
+	
+	@GetMapping("/listar/cloud/{cloudName}")
+	public List<Instances> listarCloud(@PathVariable String cloudName){
+		return repository.findBycloudName(cloudName);
+	}
+	
 
-	@GetMapping("/listarAws/regiao/{regiao}")
-	public List<InstancesAws> listarAwsRegiao(@PathVariable String regiao){
-		return awsRepository.findByregion(regiao);
+	@GetMapping("/listar/regiao/{regiao}")
+	public List<Instances> listarRegiao(@PathVariable String regiao){
+		return repository.findByregion(regiao);
 	}
 	
-	@GetMapping("/listarAws/tipoInstancia/{tipoInstancia}")
-	public List<InstancesAws> listarAwsTipoInstancia(@PathVariable String tipoInstancia){
-		return awsRepository.findByinstanceType(tipoInstancia);
+	@GetMapping("/listar/tipoInstancia/{tipoInstancia}")
+	public List<Instances> listarTipoInstancia(@PathVariable String tipoInstancia){
+		return repository.findByinstanceType(tipoInstancia);
 	}
 	
 }
