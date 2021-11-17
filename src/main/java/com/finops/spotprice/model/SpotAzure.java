@@ -1,21 +1,50 @@
 package com.finops.spotprice.model;
 
-
-import java.util.ArrayList;
-import java.util.List;
-
-
 import lombok.Data;
 
 @Data
-public class SpotAzure{
-	
-	String billingCurrency;
-	String CustomerEntityId;	
-	String CustomerEntityType;
-	String NextPageLink;	
-	int Count;
-	
-	public List<InstancesAzure> Items = new ArrayList<InstancesAzure>();
-	
+public class SpotAzure {
+
+	private String location;
+
+	private double unitPrice;
+
+	private String effectiveStartDate;
+
+	private String productName;
+
+	private String skuName;
+
+	/*
+	 * String currencyCode;
+	 * 
+	 * int tierMinimumUnits;
+	 * 
+	 * double retailPrice;
+	 * 
+	 * String armRegionName;
+	 * 
+	 * String meterId;
+	 * 
+	 * String meterName;
+	 * 
+	 * String productId;
+	 * 
+	 * String skuId;
+	 * 
+	 * String serviceName;
+	 * 
+	 * String serviceId;
+	 * 
+	 * String serviceFamily;
+	 * 
+	 * String unitOfMeasure;
+	 * 
+	 * String type;
+	 * 
+	 * boolean isPrimaryMeterRegion;
+	 * 
+	 * String armSkuName;
+	 * 
+	 */
 }

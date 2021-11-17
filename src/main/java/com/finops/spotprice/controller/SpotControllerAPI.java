@@ -10,44 +10,49 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.finops.spotprice.repository.SpotAwsRepository;
-import com.finops.spotprice.repository.SpotAzureRepository;
-import com.finops.spotprice.model.InstancesAws;
-import com.finops.spotprice.model.InstancesAzure;
-
+import com.finops.spotprice.repository.SpotRepository;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.finops.spotprice.model.Instances;
 
 @RestController("/spot")
 public class SpotControllerAPI {
 
-	//------AZURE------
-	
-	@Autowired
-	private SpotAzureRepository azureRepository;
-
-	@GetMapping("/listarAzure")
-	public List<InstancesAzure> listarAzure() {
-		return azureRepository.findAll();
-	}
-
-	
-	//-------AWS--------
 
 	@Autowired
-	private SpotAwsRepository awsRepository;
+	private SpotRepository repository;
+	private List<Instances> instanciasCloudRegion;
 	
-	@GetMapping("/listarAws")
-	public List<InstancesAws> listarAws(){
-		return awsRepository.findAll();
+	@GetMapping("/listar")
+	public List<Instances> listar(){
+		return repository.findAll();
 	}
+	
+	@GetMapping("/listar/cloud/{cloudName}")
+	public List<Instances> listarCloud(@PathVariable String cloudName){
+		return repository.findBycloudName(cloudName);
+	}
+	
+	
+	@GetMapping("/listar/cloud/{cloudName}/region/{region}")
+	public List<Instances> listarCloudRegion(@PathVariable String cloudName, @PathVariable String region){
+		return repository.findBycloudNameAndRegion(cloudName, region);
+	}
+	
+	@GetMapping("/listar/cloud/{cloudName}/region/{region}/instanceType/{instanceType}")
+	public List<Instances> listarCloudRegionInstanceType(@PathVariable String cloudName, @PathVariable String region, @PathVariable String instanceType){
+		return repository.findBycloudNameAndRegionAndInstanceType(cloudName, region, instanceType);
+	}
+	
+	@GetMapping("/listar/cloud/{cloudName}/instanceType/{instanceType}")
+	public List<Instances> listarCloudInstancetype(@PathVariable String cloudName, @PathVariable String instanceType){
+		return repository.findBycloudNameAndInstanceType(cloudName, instanceType);
+	}
+	
 
-	@GetMapping("/listarAws/regiao/{Regiao}")
-	public List<InstancesAws> listarAwsRegiao(@PathVariable String regiao){
-		return awsRepository.findByavailabilityZone(regiao);
-	}
-	
-	@GetMapping("/listarAws/tipoInstancia/{tipoInstancia}")
-	public List<InstancesAws> listarAwsTipoInstancia(@PathVariable String tipoInstancia){
-		return awsRepository.findByinstanceType(tipoInstancia);
+	@GetMapping("/listar/tipoInstancia/{tipoInstancia}")
+	public List<Instances> listarTipoInstancia(@PathVariable String tipoInstancia){
+		return repository.findByinstanceType(tipoInstancia);
 	}
 	
 }
