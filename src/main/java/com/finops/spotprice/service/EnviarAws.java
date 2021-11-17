@@ -118,6 +118,7 @@ public class EnviarAws {
 							pstm.setString(3, resultadoSelect.getString("cod_spot"));
 
 							pstm.execute();
+						
 
 						} else {
 							// Se o dado não existir, insere ele no banco de dados
@@ -132,7 +133,9 @@ public class EnviarAws {
 							pstm.setString(6, dateFormat.format(spot.getTimestamp()));
 
 							pstm.execute();
+							
 						}
+						
 					}
 				}
 
