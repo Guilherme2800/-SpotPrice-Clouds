@@ -2,8 +2,12 @@ package com.finops.spotprice.service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +28,10 @@ public class EnviarAzure {
 	private final long HORA = MINUTO * 60;
 
 	// Instancia o objeto de conexão com o banco de dados
-	ConexaoMariaDb conexao = new ConexaoMariaDb();
+	ConexaoMariaDb objetoMariaDb = new ConexaoMariaDb();
 
 	// recebe a conexão
-	Connection con = conexao.conectar();
+	Connection conexao = objetoMariaDb.conectar();
 
 	// Objeto que prepara o código SQL
 	PreparedStatement pstm = null;
@@ -48,43 +52,68 @@ public class EnviarAzure {
 						+ formatarDate.format(data) + "-01");
 
 		try {
-			pstm = con.prepareStatement(
-					"insert into azure (currency_code, tier_minimum_units, retail_price, unit_price, arm_region_name, "
-							+ "location, effective_start_date, meter_id, meter_name, product_id, sku_id, "
-							+ "product_name, sku_name, service_name, service_id, service_family, "
-							+ "unit_of_measure, typ_e, is_primary_meter_region, arm_sku_name) "
-							+ "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
 			System.out.println("\nEnviando para o banco de dados");
 
 			boolean proximo = true;
 
 			while (proximo) {
 
-				for (int i = 0; i < azureSpot.Items.size(); i++) {
+				for (InstancesAzure spot : azureSpot.getItems()) {
 
-					if (azureSpot.Items.get(i).getUnitPrice() != 0) {
-						pstm.setString(1, azureSpot.Items.get(i).getCurrencyCode());
-						pstm.setDouble(2, azureSpot.Items.get(i).getTierMinimumUnits());
-						pstm.setDouble(3, azureSpot.Items.get(i).getRetailPrice());
-						pstm.setDouble(4, azureSpot.Items.get(i).getUnitPrice());
-						pstm.setString(5, azureSpot.Items.get(i).getArmRegionName());
-						pstm.setString(6, azureSpot.Items.get(i).getLocation());
-						pstm.setString(7, azureSpot.Items.get(i).getEffectiveStartDate());
-						pstm.setString(8, azureSpot.Items.get(i).getMeterId());
-						pstm.setString(9, azureSpot.Items.get(i).getMeterName());
-						pstm.setString(10, azureSpot.Items.get(i).getProductId());
-						pstm.setString(11, azureSpot.Items.get(i).getSkuId());
-						pstm.setString(12, azureSpot.Items.get(i).getProductName());
-						pstm.setString(13, azureSpot.Items.get(i).getSkuName());
-						pstm.setString(14, azureSpot.Items.get(i).getServiceName());
-						pstm.setString(15, azureSpot.Items.get(i).getServiceId());
-						pstm.setString(16, azureSpot.Items.get(i).getServiceFamily());
-						pstm.setString(17, azureSpot.Items.get(i).getUnitOfMeasure());
-						pstm.setString(18, azureSpot.Items.get(i).getType());
-						pstm.setBoolean(19, azureSpot.Items.get(i).isPrimaryMeterRegion());
-						pstm.setString(20, azureSpot.Items.get(i).getArmSkuName());
+					if (spot.getUnitPrice() != 0) {
+						
+						DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
+					    OffsetDateTime dataSpot = OffsetDateTime.parse(spot.getEffectiveStartDate());
+					    String dataSpotFormatada = dataSpot.format(formatarPadrao);
+					    
+						// Select para verificar se já existe esse dado no banco de dados
+						pstm = conexao.prepareStatement(
+								"select * from spotprices where cloud_name = 'azure' and instance_type = '"
+										+ spot.getSkuName() + "'" + "and region = '" + spot.getLocation()
+										+ "' and product_description = '" + spot.getProductName() + "' ");
 
-						pstm.execute();
+						ResultSet resultadoSelect = pstm.executeQuery();
+
+						// Se o dado já estar no banco de dados, entra no IF
+						if (resultadoSelect.next()) {
+							
+							// Insere o dado atual na tabela de historico
+							pstm = conexao.prepareStatement(
+									"insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
+
+							pstm.setString(1, resultadoSelect.getString("cod_spot"));
+							pstm.setString(2, resultadoSelect.getString("price"));
+							pstm.setString(3, resultadoSelect.getString("data_req"));
+
+							pstm.execute();
+
+							// Atualiza o dado atual com a nova data e preco
+							pstm = conexao.prepareStatement(
+									"update spotprices set price = ?, data_req = ? where cod_spot = ?");
+							pstm.setDouble(1, spot.getUnitPrice());
+							pstm.setString(2, dataSpotFormatada);
+							pstm.setString(3, resultadoSelect.getString("cod_spot"));
+
+							pstm.execute();
+
+						} else {
+							// Se o dado não existir, insere ele no banco de dados
+							pstm = conexao.prepareStatement("insert into spotprices (cloud_name, instance_type,"
+									+ "region, product_description, price, data_req) values (?, ?, ?, ?, ?, ?)");
+
+							pstm.setString(1, "AZURE");
+							pstm.setString(2, spot.getSkuName());
+							pstm.setString(3, spot.getLocation());
+							pstm.setString(4, spot.getProductName());
+							pstm.setDouble(5, spot.getUnitPrice());
+							pstm.setString(6, dataSpotFormatada);
+
+							pstm.execute();
+							
+							
+						}
+
 					}
 
 				}
@@ -102,7 +131,7 @@ public class EnviarAzure {
 			e.printStackTrace();
 		}
 
-		conexao.desconectar();
+		objetoMariaDb.desconectar();
 
 	}
 

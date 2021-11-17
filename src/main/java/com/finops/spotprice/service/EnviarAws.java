@@ -95,8 +95,7 @@ public class EnviarAws {
 										+ spot.getInstanceType() + "'" + "and region = '" + regiao
 										+ "' and product_description = '" + spot.getProductDescription() + "' ");
 
-						ResultSet resultadoSelect;
-						resultadoSelect = pstm.executeQuery();
+						ResultSet resultadoSelect = pstm.executeQuery();
 
 						// Se o dado já estar no banco de dados, entra no IF
 						if (resultadoSelect.next()) {
