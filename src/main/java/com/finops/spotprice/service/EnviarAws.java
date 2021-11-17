@@ -29,7 +29,7 @@ public class EnviarAws {
 	private final long MINUTO = SEGUNDO * 60;
 	private final long HORA = MINUTO * 60;
 
-	//@Scheduled(fixedDelay = MINUTO * 8)
+	//@Scheduled(fixedDelay = HORA)
 	public void correrRegioes() {
 
 		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
@@ -86,8 +86,6 @@ public class EnviarAws {
 				// percorre o array de instancias da AWS
 				for (SpotPrice spot : arrayInstanciasAws.getSpotPriceHistory()) {
 
-					// Verifica se a região é do tipo A
-					if (spot.getAvailabilityZone().toLowerCase().endsWith("a")) {
 
 						// Select para verificar se já existe esse dado no banco de dados
 						pstm = conexao.prepareStatement(
@@ -136,7 +134,7 @@ public class EnviarAws {
 							
 						}
 						
-					}
+					
 				}
 
 				if (arrayInstanciasAws.getSpotPriceHistory().size() < 1000) {

@@ -18,8 +18,8 @@ import org.springframework.stereotype.Component;
 import com.finops.spotprice.model.SpotAzure;
 import com.finops.spotprice.model.SpotAzureArray;
 
-//@Component
-//@EnableScheduling
+@Component
+@EnableScheduling
 public class EnviarAzure {
 
 	private final long SEGUNDO = 1000;
@@ -42,7 +42,7 @@ public class EnviarAzure {
 	Date data = new Date(System.currentTimeMillis());
 	SimpleDateFormat formatarDate = new SimpleDateFormat("yyyy-MM");
 
-	//@Scheduled(fixedDelay = HORA)
+	@Scheduled(fixedDelay = HORA)
 	public void enviar() {
 
 		// Recebe o json convertido
@@ -61,11 +61,11 @@ public class EnviarAzure {
 				for (SpotAzure spot : azureSpot.getItems()) {
 
 					if (spot.getUnitPrice() != 0) {
-						
+
 						DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
-					    OffsetDateTime dataSpot = OffsetDateTime.parse(spot.getEffectiveStartDate());
-					    String dataSpotFormatada = dataSpot.format(formatarPadrao);
-					    
+						OffsetDateTime dataSpot = OffsetDateTime.parse(spot.getEffectiveStartDate());
+						String dataSpotFormatada = dataSpot.format(formatarPadrao);
+
 						// Select para verificar se já existe esse dado no banco de dados
 						pstm = conexao.prepareStatement(
 								"select * from spotprices where cloud_name = 'azure' and instance_type = '"
@@ -76,7 +76,7 @@ public class EnviarAzure {
 
 						// Se o dado já estar no banco de dados, entra no IF
 						if (resultadoSelect.next()) {
-							
+
 							// Insere o dado atual na tabela de historico
 							pstm = conexao.prepareStatement(
 									"insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
@@ -109,8 +109,7 @@ public class EnviarAzure {
 							pstm.setString(6, dataSpotFormatada);
 
 							pstm.execute();
-							
-							
+
 						}
 
 					}
@@ -119,10 +118,12 @@ public class EnviarAzure {
 
 				if (azureSpot.getCount() < 100) {
 					proximo = false;
-				} else {
+				} else if(azureSpot.getNextPageLink() != null){
+					System.out.println(azureSpot.getNextPageLink());
 					azureSpot = converter.converter(azureSpot.getNextPageLink());
+				} else {
+					proximo = false;
 				}
-
 			}
 
 		} catch (SQLException e) {
