@@ -11,6 +11,8 @@ import java.time.format.DateTimeFormatter;
 import com.finops.spotprice.model.googlecloud.SpotGoogle;
 import com.finops.spotprice.model.googlecloud.SpotGoogleArray;
 
+//@Component
+//@EnableScheduling
 public class EnviarGoogle {
 
 	// Instancia o objeto de conexão com o banco de dados
@@ -25,10 +27,11 @@ public class EnviarGoogle {
 	// Instancia o objeto que vai converter o JSON para objeto
 	JsonForObjectGoogle converterJson = new JsonForObjectGoogle();
 
+	// Formatar valor da instancia
 	DecimalFormat formatar = new DecimalFormat("0.0000");
-
+	
+	//@Scheduled(fixedDelay = HORA)
 	public void enviar() {
-		System.out.println("Entrou no metodo");
 
 		SpotGoogleArray googleSpot = converterJson.converter(
 				"https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus?key=AIzaSyA9eUyryawCIAgta6f2TzUgVEijCmvauns");
@@ -39,76 +42,82 @@ public class EnviarGoogle {
 
 			boolean proximo = true;
 
+			int i = 0;
+
 			while (proximo) {
-			
+
 				for (SpotGoogle spot : googleSpot.getSkus()) {
 
-					if (spot.getCategory().getUsageType().contains("Preemptible")) {
+					if (spot.getDescription().contains("Spot")) {
 
-						DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
-						OffsetDateTime dataSpot = OffsetDateTime.parse(spot.getPricingInfo().get(0).getEffectiveTime());
-						String dataSpotFormatada = dataSpot.format(formatarPadrao);
+						for (int countRegions = 0; countRegions < spot.getServiceRegions().size(); countRegions++) {
 
-						String unitPrice = formatar.format(spot.getPricingInfo().get(0).getPricingExpression()
-								.getTieredRates().get(0).getUnitPrice().getNanos() * Math.pow(10, -9));
-						unitPrice += spot.getPricingInfo().get(0).getPricingExpression().getTieredRates().get(0)
-								.getUnitPrice().getUnits();
+							// Formata a data
+							DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
+							OffsetDateTime dataSpot = OffsetDateTime.parse(spot.getPricingInfo().get(0).getEffectiveTime());
+							String dataSpotFormatada = dataSpot.format(formatarPadrao);
 
-						// Select para verificar se já existe esse dado no banco de dados
-						pstm = conexao.prepareStatement(
-								"select * from spotprices where cloud_name = 'azure' and instance_type = '"
-										+ spot.getCategory().getResourceGroup() + "'" + "and region = '"
-										+ spot.getCategory().getResourceGroup() + "' and product_description = '"
-										+ spot.getDescription() + "' ");
+							//Realiza o calculo do preço da instancia 
+							String unitPrice = formatar.format(spot.getPricingInfo().get(0).getPricingExpression().getTieredRates().get(0).getUnitPrice().getNanos() * Math.pow(10, -9));
+							unitPrice += spot.getPricingInfo().get(0).getPricingExpression().getTieredRates().get(0).getUnitPrice().getUnits();
 
-						ResultSet resultadoSelect = pstm.executeQuery();
-
-						// Se o dado já estar no banco de dados, entra no IF
-						if (resultadoSelect.next()) {
-
-							// Insere o dado atual na tabela de historico
-							pstm = conexao.prepareStatement(
-									"insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
-
-							pstm.setString(1, resultadoSelect.getString("cod_spot"));
-							pstm.setString(2, resultadoSelect.getString("price"));
-							pstm.setString(3, resultadoSelect.getString("data_req"));
-
-							pstm.execute();
-
-							// Atualiza o dado atual com a nova data e preco
-							pstm = conexao.prepareStatement(
-									"update spotprices set price = ?, data_req = ? where cod_spot = ?");
-
-							pstm.setString(1, unitPrice);
-							pstm.setString(2, dataSpotFormatada);
-							pstm.setString(3, resultadoSelect.getString("cod_spot"));
-
-							pstm.execute();
-
-						} else {
+							//-------------------COMANDOS SQL-----------------------
 							
-							// Se o dado não existir, insere ele no banco de dados
-							pstm = conexao.prepareStatement("insert into spotprices (cloud_name, instance_type,"
-									+ "region, product_description, price, data_req) values (?, ?, ?, ?, ?, ?)");
+							// Select para verificar se já existe esse dado no banco de dados
+							pstm = conexao.prepareStatement(
+									"select * from spotprices where cloud_name = 'google' and instance_type = '"
+											+ spot.getCategory().getResourceGroup() + "'" + "and region = '"
+											+ spot.getServiceRegions().get(countRegions)
+											+ "' and product_description = '" + spot.getDescription() + "' ");
 
-							System.out.println(unitPrice);
-							
-							pstm.setString(1, "GOOGLE");
-							pstm.setString(2, spot.getCategory().getResourceGroup());
-							pstm.setString(3, spot.getCategory().getResourceGroup());
-							pstm.setString(4, spot.getDescription());
-							pstm.setString(5, unitPrice.replaceAll(",", "."));
-							pstm.setString(6, dataSpotFormatada);
+							ResultSet resultadoSelect = pstm.executeQuery();
 
-							pstm.execute();
+							// Se o dado já estar no banco de dados, entra no IF
+							if (resultadoSelect.next()) {
+								
+								// Insere o dado atual na tabela de historico
+								pstm = conexao.prepareStatement(
+										"insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
 
+								pstm.setString(1, resultadoSelect.getString("cod_spot"));
+								pstm.setString(2, resultadoSelect.getString("price"));
+								pstm.setString(3, resultadoSelect.getString("data_req"));
+
+								pstm.execute();
+
+								// Atualiza o dado atual com a nova data e preco
+								pstm = conexao.prepareStatement(
+										"update spotprices set price = ?, data_req = ? where cod_spot = ?");
+
+								pstm.setString(1, unitPrice.replaceAll(",", "."));
+								pstm.setString(2, dataSpotFormatada);
+								pstm.setString(3, resultadoSelect.getString("cod_spot"));
+
+								pstm.execute();
+
+							} else {
+
+								// Se o dado não existir, insere ele no banco de dados
+								pstm = conexao.prepareStatement("insert into spotprices (cloud_name, instance_type,"
+										+ "region, product_description, price, data_req) values (?, ?, ?, ?, ?, ?)");
+
+								pstm.setString(1, "GOOGLE");
+								pstm.setString(2, spot.getCategory().getResourceGroup());
+								pstm.setString(3, spot.getServiceRegions().get(countRegions));
+								pstm.setString(4, spot.getDescription());
+								pstm.setString(5, unitPrice.replaceAll(",", "."));
+								pstm.setString(6, dataSpotFormatada);
+								pstm.execute();
+
+							}
+							i++;
 						}
 
 					}
 
 				}
 
+				// Controle se a existe uma proxima pagina
 				if (googleSpot.getNextPageToken() == null || googleSpot.getSkus().size() != 5000) {
 					proximo = false;
 				} else {
@@ -119,7 +128,7 @@ public class EnviarGoogle {
 				}
 			}
 
-			System.out.println("Terminou google");
+			System.out.println("Terminou google: " + i + " Instancias atualizadas");
 
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
