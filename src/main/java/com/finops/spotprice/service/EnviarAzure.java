@@ -15,8 +15,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.finops.spotprice.model.SpotAzure;
-import com.finops.spotprice.model.SpotAzureArray;
+import com.finops.spotprice.model.azurecloud.*;
 
 @Component
 @EnableScheduling
@@ -26,29 +25,33 @@ public class EnviarAzure {
 	private final long MINUTO = SEGUNDO * 60;
 	private final long HORA = MINUTO * 60;
 
-	// Instancia o objeto de conexão com o banco de dados
-	ConexaoMariaDb objetoMariaDb = new ConexaoMariaDb();
-
-	// recebe a conexão
-	Connection conexao = objetoMariaDb.conectar();
-
-	// Objeto que prepara o código SQL
-	PreparedStatement pstm = null;
-
-	// Instancia o objeto que vai converter o JSON para objeto
-	JsonForObjectAzure converter = new JsonForObjectAzure();
-
-	// Pega o dia atual
-	Date data = new Date(System.currentTimeMillis());
-	SimpleDateFormat formatarDate = new SimpleDateFormat("yyyy-MM");
-
 	@Scheduled(fixedDelay = HORA)
 	public void enviar() {
 
+		// -------------------VARIAVEIS -----------
+		
+		// Instancia o objeto de conexão com o banco de dados
+		ConexaoMariaDb objetoMariaDb = new ConexaoMariaDb();
+
+		// recebe a conexão
+		Connection conexao = objetoMariaDb.conectar();
+
+		// Objeto que prepara o código SQL
+		PreparedStatement pstm = null;
+
+		// Instancia o objeto que vai converter o JSON para objeto
+		JsonForObjectAzure converter = new JsonForObjectAzure();
+
+		// Pega o dia atual
+		Date data = new Date(System.currentTimeMillis());
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
+		
+		// ------------- INICIO DO MÉTODO ----------------
+		
 		// Recebe o json convertido
 		SpotAzureArray azureSpot = converter.converter(
 				"https://prices.azure.com/api/retail/prices?$skip=0&$filter=serviceName%20eq%20%27Virtual%20Machines%27%20and%20priceType%20eq%20%27Consumption%27%20and%20endswith(meterName,%20%27Spot%27)%20and%20effectiveStartDate%20eq%20"
-						+ formatarDate.format(data) + "-01");
+						+ sdf.format(data) + "-01");
 
 		try {
 
@@ -62,6 +65,7 @@ public class EnviarAzure {
 
 					if (spot.getUnitPrice() != 0) {
 
+						// Formata a data
 						DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
 						OffsetDateTime dataSpot = OffsetDateTime.parse(spot.getEffectiveStartDate());
 						String dataSpotFormatada = dataSpot.format(formatarPadrao);
@@ -76,6 +80,8 @@ public class EnviarAzure {
 
 						// Se o dado já estar no banco de dados, entra no IF
 						if (resultadoSelect.next()) {
+							
+							//-------------------COMANDOS SQL-----------------------
 
 							// Insere o dado atual na tabela de historico
 							pstm = conexao.prepareStatement(
@@ -116,6 +122,7 @@ public class EnviarAzure {
 
 				}
 
+				// Controle se a existe uma proxima pagina
 				if (azureSpot.getCount() < 100) {
 					proximo = false;
 				} else if(azureSpot.getNextPageLink() != null){

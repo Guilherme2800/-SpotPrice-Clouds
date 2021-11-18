@@ -2,24 +2,23 @@ package com.finops.spotprice.service;
 
 import java.lang.reflect.Type;
 
-import com.finops.spotprice.model.azurecloud.SpotAzureArray;
+import com.finops.spotprice.model.googlecloud.SpotGoogleArray;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+public class JsonForObjectGoogle {
 
-
-public class JsonForObjectAzure {
-	
-	public SpotAzureArray converter(String url) {
+	public SpotGoogleArray converter(String url) {
 
 		ReceberJson json = new ReceberJson();
-
+		
 		// Define a classe que o json será convertido
-		Type type = new TypeToken<SpotAzureArray>() {
+		Type type = new TypeToken<SpotGoogleArray>() {
 		}.getType();
 
 		// Converte a string na classe definida anteriormente
-		SpotAzureArray spot = new Gson().fromJson(json.receberJson(url), type);
+		SpotGoogleArray spot = new Gson().fromJson(json.receberJson(url), type);
 		return spot;
 	}
+	
 }

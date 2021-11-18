@@ -29,7 +29,7 @@ public class EnviarAws {
 	private final long MINUTO = SEGUNDO * 60;
 	private final long HORA = MINUTO * 60;
 
-	//@Scheduled(fixedDelay = HORA)
+	@Scheduled(fixedDelay = HORA)
 	public void correrRegioes() {
 
 		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
@@ -74,8 +74,6 @@ public class EnviarAws {
 
 			DescribeSpotPriceHistoryResult arrayInstanciasAws = client.describeSpotPriceHistory(request);
 
-			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-
 			System.out.println("\nEnviando Região " + regiao + " para o banco de dados");
 
 			boolean proximo = true;
@@ -85,7 +83,6 @@ public class EnviarAws {
 
 				// percorre o array de instancias da AWS
 				for (SpotPrice spot : arrayInstanciasAws.getSpotPriceHistory()) {
-
 
 						// Select para verificar se já existe esse dado no banco de dados
 						pstm = conexao.prepareStatement(
@@ -97,6 +94,8 @@ public class EnviarAws {
 
 						// Se o dado já estar no banco de dados, entra no IF
 						if (resultadoSelect.next()) {
+							
+							//-------------------COMANDOS SQL-----------------------
 
 							// Insere o dado atual na tabela de historico
 							pstm = conexao.prepareStatement(
@@ -112,7 +111,7 @@ public class EnviarAws {
 							pstm = conexao.prepareStatement(
 									"update spotprices set price = ?, data_req = ? where cod_spot = ?");
 							pstm.setString(1, spot.getSpotPrice());
-							pstm.setString(2, dateFormat.format(spot.getTimestamp()));
+							pstm.setString(2, sdf.format(spot.getTimestamp()));
 							pstm.setString(3, resultadoSelect.getString("cod_spot"));
 
 							pstm.execute();
@@ -128,7 +127,7 @@ public class EnviarAws {
 							pstm.setString(3, regiao);
 							pstm.setString(4, spot.getProductDescription());
 							pstm.setString(5, spot.getSpotPrice());
-							pstm.setString(6, dateFormat.format(spot.getTimestamp()));
+							pstm.setString(6, sdf.format(spot.getTimestamp()));
 
 							pstm.execute();
 							
