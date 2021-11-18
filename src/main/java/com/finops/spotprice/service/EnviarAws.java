@@ -97,25 +97,35 @@ public class EnviarAws {
 							
 							//-------------------COMANDOS SQL-----------------------
 
-							// Insere o dado atual na tabela de historico
 							pstm = conexao.prepareStatement(
-									"insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
+									"select * from pricehistory where cod_spot = '"+ resultadoSelect.getString("cod_spot") +"' and price = '"
+											+ resultadoSelect.getString("price") + "'" + "and data_req = '" + resultadoSelect.getString("data_req")
+											+ "' ");
 
-							pstm.setString(1, resultadoSelect.getString("cod_spot"));
-							pstm.setString(2, resultadoSelect.getString("price"));
-							pstm.setString(3, resultadoSelect.getString("data_req"));
+							ResultSet resultadoSelectHistory = pstm.executeQuery();
+							
+							if(!resultadoSelectHistory.next()) {
+								
+								// Insere o dado atual na tabela de historico
+								pstm = conexao.prepareStatement(
+										"insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
 
-							pstm.execute();
+								pstm.setString(1, resultadoSelect.getString("cod_spot"));
+								pstm.setString(2, resultadoSelect.getString("price"));
+								pstm.setString(3, resultadoSelect.getString("data_req"));
 
-							// Atualiza o dado atual com a nova data e preco
-							pstm = conexao.prepareStatement(
-									"update spotprices set price = ?, data_req = ? where cod_spot = ?");
-							pstm.setString(1, spot.getSpotPrice());
-							pstm.setString(2, sdf.format(spot.getTimestamp()));
-							pstm.setString(3, resultadoSelect.getString("cod_spot"));
+								pstm.execute();
 
-							pstm.execute();
-						
+								// Atualiza o dado atual com a nova data e preco
+								pstm = conexao.prepareStatement(
+										"update spotprices set price = ?, data_req = ? where cod_spot = ?");
+								pstm.setString(1, spot.getSpotPrice());
+								pstm.setString(2, sdf.format(spot.getTimestamp()));
+								pstm.setString(3, resultadoSelect.getString("cod_spot"));
+
+								pstm.execute();
+								
+							}
 
 						} else {
 							// Se o dado não existir, insere ele no banco de dados

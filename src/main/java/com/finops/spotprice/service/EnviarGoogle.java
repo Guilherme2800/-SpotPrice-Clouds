@@ -41,7 +41,7 @@ public class EnviarGoogle {
 		JsonForObjectGoogle converterJson = new JsonForObjectGoogle();
 
 		// Formatar valor da instancia
-		DecimalFormat formatar = new DecimalFormat("0.0000");
+		DecimalFormat formatar = new DecimalFormat("0.000000");
 
 		// ------------------- INICIO METODO ----------
 		
