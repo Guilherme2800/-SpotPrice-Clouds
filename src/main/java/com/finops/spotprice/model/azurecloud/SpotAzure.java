@@ -1,4 +1,4 @@
-package com.finops.spotprice.model;
+package com.finops.spotprice.model.azurecloud;
 
 import lombok.Data;
 
@@ -47,4 +47,5 @@ public class SpotAzure {
 	 * String armSkuName;
 	 * 
 	 */
+	
 }
