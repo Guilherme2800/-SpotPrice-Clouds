@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class SpotGoogleArray {
 
-	List<SpotGoogle> spot = new ArrayList<SpotGoogle>();
+	List<SpotGoogle> skus = new ArrayList<SpotGoogle>();
 	private String nextPageToken;
 
 }

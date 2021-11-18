@@ -13,8 +13,8 @@ public class SpotPriceApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(SpotPriceApplication.class, args);
 		
-		EnviarGoogle teste = new EnviarGoogle();
-		teste.enviar();
+		EnviarGoogle testando = new EnviarGoogle();
+		testando.enviar();
 		
 	}
 

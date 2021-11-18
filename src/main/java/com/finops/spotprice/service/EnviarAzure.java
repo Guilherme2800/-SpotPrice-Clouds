@@ -18,8 +18,8 @@ import org.springframework.stereotype.Component;
 import com.finops.spotprice.model.SpotAzure;
 import com.finops.spotprice.model.SpotAzureArray;
 
-@Component
-@EnableScheduling
+//@Component
+//@EnableScheduling
 public class EnviarAzure {
 
 	private final long SEGUNDO = 1000;
