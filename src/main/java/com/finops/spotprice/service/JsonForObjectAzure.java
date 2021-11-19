@@ -19,7 +19,7 @@ public class JsonForObjectAzure {
 		}.getType();
 
 		// Converte a string na classe definida anteriormente
-		SpotAzureArray spot = new Gson().fromJson(json.receberJson(url), type);
+		SpotAzureArray spot = new Gson().fromJson(json.requisitarJson(url), type);
 		return spot;
 	}
 }

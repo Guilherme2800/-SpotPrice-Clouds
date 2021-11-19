@@ -7,13 +7,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
+import org.springframework.stereotype.Service;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+@Service
 public class ReceberJson {
 
-	public JsonObject receberJson(String site) {
+	public JsonObject requisitarJson(String site) {
 
 		String sURL = site;
 		JsonObject jo = null;

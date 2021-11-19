@@ -17,7 +17,7 @@ public class JsonForObjectGoogle {
 		}.getType();
 
 		// Converte a string na classe definida anteriormente
-		SpotGoogleArray spot = new Gson().fromJson(json.receberJson(url), type);
+		SpotGoogleArray spot = new Gson().fromJson(json.requisitarJson(url), type);
 		return spot;
 	}
 	

@@ -15,13 +15,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.finops.spotprice.model.Instances;
 
-@RestController("/spot")
+@RestController
 public class SpotControllerAPI {
 
 
 	@Autowired
 	private SpotRepository repository;
-	private List<Instances> instanciasCloudRegion;
 	
 	@GetMapping("/listar")
 	public List<Instances> listar(){

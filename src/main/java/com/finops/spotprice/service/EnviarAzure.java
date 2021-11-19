@@ -25,7 +25,7 @@ public class EnviarAzure {
 	private final long MINUTO = SEGUNDO * 60;
 	private final long HORA = MINUTO * 60;
 
-	@Scheduled(fixedDelay = HORA)
+	//@Scheduled(fixedDelay = HORA)
 	public void enviar() {
 
 		// -------------------VARIAVEIS -----------
