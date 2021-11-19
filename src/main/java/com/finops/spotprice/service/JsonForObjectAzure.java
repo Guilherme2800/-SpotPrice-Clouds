@@ -2,12 +2,13 @@ package com.finops.spotprice.service;
 
 import java.lang.reflect.Type;
 
+import org.springframework.stereotype.Service;
+
 import com.finops.spotprice.model.azurecloud.SpotAzureArray;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-
-
+@Service
 public class JsonForObjectAzure {
 	
 	public SpotAzureArray converter(String url) {
