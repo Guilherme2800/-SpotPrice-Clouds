@@ -5,12 +5,18 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.springframework.stereotype.Service;
+
+import lombok.Data;
+
 /*
  * 
- * ESSA CLASSE É UTILIZADA PARA POSSIBILITAR O ENVIO DOS DADOS DA AZURE COM JDBC
+ * ESSA CLASSE É UTILIZADA PARA POSSIBILITAR O ENVIO DOS DADOS DA AZURE E GOOGLE COM JDBC
  * 
  */
 
+@Data
+@Service
 public class ConexaoMariaDb {
 
 	static final String JDBC_DRIVER = "org.mariadb.jdbc.Driver";
