@@ -1,4 +1,4 @@
-package com.finops.spotprice.service;
+package com.finops.spotprice.model;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,6 +16,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.finops.spotprice.model.azurecloud.*;
+import com.finops.spotprice.service.ConexaoMariaDb;
+import com.finops.spotprice.service.JsonForObjectAzure;
 
 @Component
 @EnableScheduling

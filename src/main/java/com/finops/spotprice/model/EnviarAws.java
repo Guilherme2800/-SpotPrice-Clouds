@@ -1,4 +1,4 @@
-package com.finops.spotprice.service;
+package com.finops.spotprice.model;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,6 +22,7 @@ import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryRequest;
 import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryResult;
 import com.amazonaws.services.ec2.model.Region;
 import com.amazonaws.services.ec2.model.SpotPrice;
+import com.finops.spotprice.service.ConexaoMariaDb;
 
 @Component
 @EnableScheduling

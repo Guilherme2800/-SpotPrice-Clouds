@@ -1,4 +1,4 @@
-package com.finops.spotprice.service;
+package com.finops.spotprice.model;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,6 +16,8 @@ import com.finops.spotprice.model.azurecloud.SpotAzure;
 import com.finops.spotprice.model.azurecloud.SpotAzureArray;
 import com.finops.spotprice.model.googlecloud.SpotGoogle;
 import com.finops.spotprice.model.googlecloud.SpotGoogleArray;
+import com.finops.spotprice.service.ConexaoMariaDb;
+import com.finops.spotprice.service.JsonForObjectGoogle;
 
 @Component
 @EnableScheduling
@@ -225,3 +227,4 @@ public class EnviarGoogle {
 
 	
 }
+
