@@ -13,6 +13,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.DescribeRegionsResult;
@@ -32,7 +34,9 @@ public class EnviarAws {
 	//@Scheduled(fixedDelay = HORA)
 	public void correrRegioes() {
 
-		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
+		BasicAWSCredentials awsCredenciais = new BasicAWSCredentials("AKIA6KDLKFZSQL3QS5AX", "jG0NuRpfXS/1gRzPAgk0KDIDSsmH7rRjEMY7bFKl");
+		
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(awsCredenciais)).build();
 		DescribeRegionsResult regions_response = ec2.describeRegions();
 
 		System.out.println("Iniciando Envio da AWS...");
