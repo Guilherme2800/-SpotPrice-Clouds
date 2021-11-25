@@ -138,7 +138,7 @@ public class EnviarAzure {
 
 		SpotPrices newSpotPrice = new SpotPrices();
 		newSpotPrice.setCloudName("AZURE");
-		newSpotPrice.setInstanceType(spotAzure.getSkuName());
+		newSpotPrice.setInstanceType(spotAzure.getSkuName().replaceAll(" Spot", ""));
 		newSpotPrice.setRegion(spotAzure.getLocation());
 		newSpotPrice.setProductDescription(spotAzure.getProductName());
 		newSpotPrice.setPrice(spotAzure.getUnitPrice());
