@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.finops.spotprice.repository.SpotRepository;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.finops.spotprice.model.Instances;
+import com.finops.spotprice.model.SpotPrices;
 
 @RestController
 public class SpotControllerAPI {
@@ -23,34 +23,34 @@ public class SpotControllerAPI {
 	private SpotRepository repository;
 	
 	@GetMapping("/listar")
-	public List<Instances> listar(){
+	public List<SpotPrices> listar(){
 		return repository.findAll();
 	}
 	
 	@GetMapping("/listar/cloud/{cloudName}")
-	public List<Instances> listarCloud(@PathVariable String cloudName){
+	public List<SpotPrices> listarCloud(@PathVariable String cloudName){
 		return repository.findBycloudName(cloudName);
 	}
 	
 	
 	@GetMapping("/listar/cloud/{cloudName}/region/{region}")
-	public List<Instances> listarCloudRegion(@PathVariable String cloudName, @PathVariable String region){
+	public List<SpotPrices> listarCloudRegion(@PathVariable String cloudName, @PathVariable String region){
 		return repository.findBycloudNameAndRegion(cloudName, region);
 	}
 	
 	@GetMapping("/listar/cloud/{cloudName}/region/{region}/instanceType/{instanceType}")
-	public List<Instances> listarCloudRegionInstanceType(@PathVariable String cloudName, @PathVariable String region, @PathVariable String instanceType){
+	public List<SpotPrices> listarCloudRegionInstanceType(@PathVariable String cloudName, @PathVariable String region, @PathVariable String instanceType){
 		return repository.findBycloudNameAndRegionAndInstanceType(cloudName, region, instanceType);
 	}
 	
 	@GetMapping("/listar/cloud/{cloudName}/instanceType/{instanceType}")
-	public List<Instances> listarCloudInstancetype(@PathVariable String cloudName, @PathVariable String instanceType){
+	public List<SpotPrices> listarCloudInstancetype(@PathVariable String cloudName, @PathVariable String instanceType){
 		return repository.findBycloudNameAndInstanceType(cloudName, instanceType);
 	}
 	
 
 	@GetMapping("/listar/tipoInstancia/{tipoInstancia}")
-	public List<Instances> listarTipoInstancia(@PathVariable String tipoInstancia){
+	public List<SpotPrices> listarTipoInstancia(@PathVariable String tipoInstancia){
 		return repository.findByinstanceType(tipoInstancia);
 	}
 	

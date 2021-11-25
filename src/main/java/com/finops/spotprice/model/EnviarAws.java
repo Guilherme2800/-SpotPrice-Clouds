@@ -9,6 +9,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -22,7 +23,8 @@ import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryRequest;
 import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryResult;
 import com.amazonaws.services.ec2.model.Region;
 import com.amazonaws.services.ec2.model.SpotPrice;
-import com.finops.spotprice.service.ConexaoMariaDb;
+import com.finops.spotprice.repository.PriceHistoryRepository;
+import com.finops.spotprice.repository.SpotRepository;
 
 @Component
 @EnableScheduling
@@ -32,12 +34,20 @@ public class EnviarAws {
 	private final long MINUTO = SEGUNDO * 60;
 	private final long HORA = MINUTO * 60;
 
-	//@Scheduled(fixedDelay = HORA)
+	@Autowired
+	private SpotRepository spotRepository;
+
+	@Autowired
+	private PriceHistoryRepository priceHistoryRepository;
+
+	// @Scheduled(fixedDelay = HORA)
 	public void correrRegioes() {
 
-		BasicAWSCredentials awsCredenciais = new BasicAWSCredentials("AKIA6KDLKFZSQL3QS5AX", "jG0NuRpfXS/1gRzPAgk0KDIDSsmH7rRjEMY7bFKl");
-		
-		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(awsCredenciais)).build();
+		BasicAWSCredentials awsCredenciais = new BasicAWSCredentials("AKIA6KDLKFZSQL3QS5AX",
+				"jG0NuRpfXS/1gRzPAgk0KDIDSsmH7rRjEMY7bFKl");
+
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard()
+				.withCredentials(new AWSStaticCredentialsProvider(awsCredenciais)).build();
 		DescribeRegionsResult regions_response = ec2.describeRegions();
 
 		System.out.println("Iniciando Envio da AWS...");
@@ -53,14 +63,9 @@ public class EnviarAws {
 
 	private void enviarParaBanco(String regiao) {
 
-		// conecta com BD
-		ConexaoMariaDb objetoMariaDb = new ConexaoMariaDb();
-
-		// recebe a conexão
-		Connection conexao = objetoMariaDb.conectar();
-
-		// Objeto que prepara o código SQL
-		PreparedStatement pstm = null;
+		boolean proximo = true;
+		
+		SpotPrices spotPrices;
 
 		// Instancia o cliente AWS
 		AmazonEC2 client = AmazonEC2ClientBuilder.standard().withRegion(regiao).build();
@@ -81,74 +86,40 @@ public class EnviarAws {
 
 			System.out.println("\nEnviando Região " + regiao + " para o banco de dados");
 
-			boolean proximo = true;
-
 			// Esse While controla se tem uma proxima pagina de dados a carregar
 			while (proximo) {
 
 				// percorre o array de instancias da AWS
-				for (SpotPrice spot : arrayInstanciasAws.getSpotPriceHistory()) {
+				for (SpotPrice spotAws : arrayInstanciasAws.getSpotPriceHistory()) {
 
-						// Select para verificar se já existe esse dado no banco de dados
-						pstm = conexao.prepareStatement(
-								"select * from spotprices where cloud_name = 'aws' and instance_type = '"
-										+ spot.getInstanceType() + "'" + "and region = '" + regiao
-										+ "' and product_description = '" + spot.getProductDescription() + "' ");
+					spotPrices = null;
+					String dataSpotFormadata = sdf.format(spotAws.getTimestamp());
 
-						ResultSet resultadoSelect = pstm.executeQuery();
+					// verifica se já existe esse dado no banco de dados
+					spotPrices = selectSpotPrices(spotAws, regiao);
 
-						// Se o dado já estar no banco de dados, entra no IF
-						if (resultadoSelect.next()) {
-							
-							//-------------------COMANDOS SQL-----------------------
+					// Se o dado já estar no banco de dados, entra no IF
+					if (spotPrices != null) {
 
-							pstm = conexao.prepareStatement(
-									"select * from pricehistory where cod_spot = '"+ resultadoSelect.getString("cod_spot") +"' and price = '"
-											+ resultadoSelect.getString("price") + "'" + "and data_req = '" + resultadoSelect.getString("data_req")
-											+ "' ");
+						PriceHistory priceHistory = selectPriceHistory(spotPrices);
 
-							ResultSet resultadoSelectHistory = pstm.executeQuery();
-							
-							if(!resultadoSelectHistory.next()) {
-								
-								// Insere o dado atual na tabela de historico
-								pstm = conexao.prepareStatement(
-										"insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
+						// Se o dado não estiver já em priceHistory, entra no IF
+						if (priceHistory == null) {
 
-								pstm.setString(1, resultadoSelect.getString("cod_spot"));
-								pstm.setString(2, resultadoSelect.getString("price"));
-								pstm.setString(3, resultadoSelect.getString("data_req"));
+							// Insere o dado atual na tabela de historico
+							insertPricehistory(spotPrices);
 
-								pstm.execute();
+							// Atualiza o dado atual com a nova data e preco
+							updateSpotPrices(spotAws, spotPrices, dataSpotFormadata);
 
-								// Atualiza o dado atual com a nova data e preco
-								pstm = conexao.prepareStatement(
-										"update spotprices set price = ?, data_req = ? where cod_spot = ?");
-								pstm.setString(1, spot.getSpotPrice());
-								pstm.setString(2, sdf.format(spot.getTimestamp()));
-								pstm.setString(3, resultadoSelect.getString("cod_spot"));
-
-								pstm.execute();
-								
-							}
-
-						} else {
-							// Se o dado não existir, insere ele no banco de dados
-							pstm = conexao.prepareStatement("insert into spotprices (cloud_name, instance_type,"
-									+ "region, product_description, price, data_req) values (?, ?, ?, ?, ?, ?)");
-
-							pstm.setString(1, "AWS");
-							pstm.setString(2, spot.getInstanceType());
-							pstm.setString(3, regiao);
-							pstm.setString(4, spot.getProductDescription());
-							pstm.setString(5, spot.getSpotPrice());
-							pstm.setString(6, sdf.format(spot.getTimestamp()));
-
-							pstm.execute();
-							
 						}
-						
-					
+
+					} else {
+						// Se o dado não existir, insere ele no banco de dados
+						insertSpotPrices(spotAws, dataSpotFormadata, regiao);
+
+					}
+
 				}
 
 				if (arrayInstanciasAws.getSpotPriceHistory().size() < 1000) {
@@ -163,12 +134,55 @@ public class EnviarAws {
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
+	}
 
-		objetoMariaDb.desconectar();
+	protected SpotPrices selectSpotPrices(SpotPrice spotAws, String regiao) {
+
+		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AWS",
+				spotAws.getInstanceType(), regiao, spotAws.getProductDescription());
+
+	}
+
+	protected PriceHistory selectPriceHistory(SpotPrices spotPrices) {
+
+		return priceHistoryRepository.findBySelectUsingcodSpotAndpriceAnddataReq(spotPrices.getCod_spot(),
+				spotPrices.getPrice(), spotPrices.getDataReq());
+
+	}
+
+	protected void insertPricehistory(SpotPrices spotPrices) {
+
+		PriceHistory priceHistory = new PriceHistory();
+
+		priceHistory.setCodSpot(spotPrices.getCod_spot());
+		priceHistory.setPrice(spotPrices.getPrice());
+		priceHistory.setDataReq(spotPrices.getDataReq());
+
+		priceHistoryRepository.save(priceHistory);
+
+	}
+
+	protected void updateSpotPrices(SpotPrice spotAws, SpotPrices spotPrices, String dataSpotFormatada) {
+
+		spotPrices.setPrice(Double.valueOf(spotAws.getSpotPrice()).doubleValue());
+		spotPrices.setDataReq(dataSpotFormatada);
+
+		spotRepository.save(spotPrices);
+
+	}
+
+	protected void insertSpotPrices(SpotPrice spotAws, String dataSpotFormatada, String regiao) {
+
+		SpotPrices newSpotPrice = new SpotPrices();
+		newSpotPrice.setCloudName("AWS");
+		newSpotPrice.setInstanceType(spotAws.getInstanceType());
+		newSpotPrice.setRegion(regiao);
+		newSpotPrice.setProductDescription(spotAws.getProductDescription());
+		newSpotPrice.setPrice(Double.valueOf(spotAws.getSpotPrice()).doubleValue());
+		newSpotPrice.setDataReq(dataSpotFormatada);
+
+		spotRepository.save(newSpotPrice);
 
 	}
 

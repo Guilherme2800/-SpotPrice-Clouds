@@ -15,37 +15,4 @@ public class SpotAzure {
 
 	private String skuName;
 
-	/*
-	 * String currencyCode;
-	 * 
-	 * int tierMinimumUnits;
-	 * 
-	 * double retailPrice;
-	 * 
-	 * String armRegionName;
-	 * 
-	 * String meterId;
-	 * 
-	 * String meterName;
-	 * 
-	 * String productId;
-	 * 
-	 * String skuId;
-	 * 
-	 * String serviceName;
-	 * 
-	 * String serviceId;
-	 * 
-	 * String serviceFamily;
-	 * 
-	 * String unitOfMeasure;
-	 * 
-	 * String type;
-	 * 
-	 * boolean isPrimaryMeterRegion;
-	 * 
-	 * String armSkuName;
-	 * 
-	 */
-	
 }
