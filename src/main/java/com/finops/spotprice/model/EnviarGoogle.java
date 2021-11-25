@@ -8,6 +8,7 @@ import java.text.DecimalFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import com.finops.spotprice.model.azurecloud.SpotAzure;
 import com.finops.spotprice.model.azurecloud.SpotAzureArray;
 import com.finops.spotprice.model.googlecloud.SpotGoogle;
 import com.finops.spotprice.model.googlecloud.SpotGoogleArray;
+import com.finops.spotprice.repository.SpotRepository;
 import com.finops.spotprice.service.ConexaoMariaDb;
 import com.finops.spotprice.service.JsonForObjectGoogle;
 
@@ -29,45 +31,45 @@ public class EnviarGoogle {
 
 	final String URL = "https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus?key=AIzaSyA9eUyryawCIAgta6f2TzUgVEijCmvauns";
 
-//	@Scheduled(fixedDelay = HORA)
+	@Autowired
+	private SpotRepository spotRepository;
+
+	private SpotPrices spot;
+
+	@Scheduled(fixedDelay = HORA)
 	public void enviar() {
-
-		// ------------- VARIAVEIS ------------
-
-		// Instancia o objeto de conexão com o banco de dados
-		ConexaoMariaDb objetoMariaDb = new ConexaoMariaDb();
-
-		// recebe a conexão
-		Connection conexao = ConexaoMariaDb.conectar();
-
-		// ------------------- INICIO METODO ----------
 
 		// Recebe o json convertido
 		SpotGoogleArray googleSpot = solicitarObjetoGoogle(URL);
 
-		try {
+		System.out.println("\nEnviando para o banco de dados");
 
-			System.out.println("\nEnviando para o banco de dados");
+		boolean proximo = true;
 
-			boolean proximo = true;
+		while (proximo) {
 
-			while (proximo) {
+			for (SpotGoogle spotGoogle : googleSpot.getSkus()) {
 
-				for (SpotGoogle spot : googleSpot.getSkus()) {
+				if (spotGoogle.getDescription().contains("Spot")) {
 
-					if (spot.getDescription().contains("Spot")) {
+					// Formata a data
+					DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
+					OffsetDateTime dataSpot = OffsetDateTime
+							.parse(spotGoogle.getPricingInfo().get(0).getEffectiveTime());
+					String dataSpotFormatada = dataSpot.format(formatarPadrao);
 
-						// Formata a data
-						DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
-						OffsetDateTime dataSpot = OffsetDateTime.parse(spot.getPricingInfo().get(0).getEffectiveTime());
-						String dataSpotFormatada = dataSpot.format(formatarPadrao);
+					// Realiza o calculo do preço da instancia
+					String unitPrice = calcularPreco(spotGoogle);
 
-						// Realiza o calculo do preço da instancia
-						String unitPrice = calcularPreco(spot);
+					for (int countRegions = 0; countRegions < spotGoogle.getServiceRegions().size(); countRegions++) {
 
-						for (int countRegions = 0; countRegions < spot.getServiceRegions().size(); countRegions++) {
+						spot = null;
 
-							ResultSet resultadoSelect = selectSpotPrices(conexao, spot, countRegions);
+						spot = spotRepository.findBySelectUsinginstanceTypeAndregionAndProductDescription(
+								spotGoogle.getCategory().getResourceGroup(),
+								spotGoogle.getServiceRegions().get(countRegions), spotGoogle.getDescription());
+
+						System.out.println(spot);
 
 							// Se o dado já estar no banco de dados, entra no IF
 							if (resultadoSelect.next()) {
@@ -76,39 +78,32 @@ public class EnviarGoogle {
 								insertPricehistory(conexao, resultadoSelect);
 
 								// Atualiza o dado atual com a nova data e preco
-								updateSpotPrices(dataSpotFormatada, spot, conexao, resultadoSelect, unitPrice);
+								updateSpotPrices(dataSpotFormatada, spotGoogle, conexao, resultadoSelect, unitPrice);
 
 							} else {
 
 								// Se o dado não existir, insere ele no banco de dados
-								insertSpotPrices(dataSpotFormatada, spot, conexao, unitPrice, countRegions);
+								insertSpotPrices(dataSpotFormatada, spotGoogle, conexao, unitPrice, countRegions);
 
 							}
-
-						}
 
 					}
 
 				}
 
-				// Controle se a existe uma proxima pagina
-				if (googleSpot.getNextPageToken() == null || googleSpot.getSkus().size() != 5000) {
-					proximo = false;
-				} else {
-					System.out.println(googleSpot.getNextPageToken());
-					googleSpot = solicitarObjetoGoogle(URL + "&pageToken=" + googleSpot.getNextPageToken());
-
-				}
 			}
 
-			System.out.println("Terminou google");
+			// Controle se a existe uma proxima pagina
+			if (googleSpot.getNextPageToken() == null || googleSpot.getSkus().size() != 5000) {
+				proximo = false;
+			} else {
+				System.out.println(googleSpot.getNextPageToken());
+				googleSpot = solicitarObjetoGoogle(URL + "&pageToken=" + googleSpot.getNextPageToken());
 
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			}
 		}
 
-		objetoMariaDb.desconectar();
+		System.out.println("Terminou google");
 
 	}
 
@@ -126,7 +121,8 @@ public class EnviarGoogle {
 
 		return preco;
 	}
-	
+
+//	
 	protected SpotGoogleArray solicitarObjetoGoogle(String URL) {
 
 		// Instancia o objeto que vai converter o JSON para objeto
@@ -136,95 +132,93 @@ public class EnviarGoogle {
 
 		return googleArrayObject;
 	}
+//
+//	protected ResultSet selectSpotPrices(Connection conexao, SpotGoogle spot, int countRegions) {
+//
+//		PreparedStatement pstm = null;
+//
+//		ResultSet resultado = null;
+//
+//		try {
+//			pstm = conexao.prepareStatement("select * from spotprices where cloud_name = 'google' and instance_type = '"
+//					+ spot.getCategory().getResourceGroup() + "'" + "and region = '"
+//					+ spot.getServiceRegions().get(countRegions) + "' and product_description = '"
+//					+ spot.getDescription() + "' ");
+//
+//			resultado = pstm.executeQuery();
+//		} catch (SQLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//
+//		return resultado;
+//
+//	}
+//
+//	protected void insertPricehistory(Connection conexao, ResultSet resultadoSelect) {
+//
+//		PreparedStatement pstm = null;
+//
+//		try {
+//			pstm = conexao.prepareStatement("insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
+//			pstm.setString(1, resultadoSelect.getString("cod_spot"));
+//			pstm.setString(2, resultadoSelect.getString("price"));
+//			pstm.setString(3, resultadoSelect.getString("data_req"));
+//
+//			pstm.execute();
+//
+//		} catch (SQLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//
+//	}
+//
+//	protected void updateSpotPrices(String dataSpotFormatada, SpotGoogle spot, Connection conexao,
+//			ResultSet resultadoSelect, String unitPrice) {
+//
+//		PreparedStatement pstm = null;
+//
+//		try {
+//			pstm = conexao.prepareStatement("update spotprices set price = ?, data_req = ? where cod_spot = ?");
+//
+//			pstm.setString(1, unitPrice.replaceAll(",", "."));
+//			pstm.setString(2, dataSpotFormatada);
+//			pstm.setString(3, resultadoSelect.getString("cod_spot"));
+//
+//			pstm.execute();
+//
+//		} catch (SQLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//
+//	}
+//
+//	protected void insertSpotPrices(String dataSpotFormatada, SpotGoogle spot, Connection conexao, String unitPrice,
+//			int countRegions) {
+//
+//		PreparedStatement pstm = null;
+//
+//		try {
+//			pstm = conexao.prepareStatement("insert into spotprices (cloud_name, instance_type,"
+//					+ "region, product_description, price, data_req) values (?, ?, ?, ?, ?, ?)");
+//
+//			pstm.setString(1, "GOOGLE");
+//			pstm.setString(2, spot.getCategory().getResourceGroup());
+//			pstm.setString(3, spot.getServiceRegions().get(countRegions));
+//			pstm.setString(4, spot.getDescription());
+//			pstm.setString(5, unitPrice.replaceAll(",", "."));
+//			pstm.setString(6, dataSpotFormatada);
+//
+//			pstm.execute();
+//
+//		} catch (SQLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//
+//		}
+//
+//	}
 
-	protected ResultSet selectSpotPrices(Connection conexao, SpotGoogle spot, int countRegions) {
-
-		PreparedStatement pstm = null;
-
-		ResultSet resultado = null;
-
-		try {
-			pstm = conexao.prepareStatement("select * from spotprices where cloud_name = 'google' and instance_type = '"
-					+ spot.getCategory().getResourceGroup() + "'" + "and region = '"
-					+ spot.getServiceRegions().get(countRegions) + "' and product_description = '"
-					+ spot.getDescription() + "' ");
-
-			resultado = pstm.executeQuery();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		return resultado;
-
-	}
-
-	protected void insertPricehistory(Connection conexao, ResultSet resultadoSelect) {
-
-		PreparedStatement pstm = null;
-
-		try {
-			pstm = conexao.prepareStatement("insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
-			pstm.setString(1, resultadoSelect.getString("cod_spot"));
-			pstm.setString(2, resultadoSelect.getString("price"));
-			pstm.setString(3, resultadoSelect.getString("data_req"));
-
-			pstm.execute();
-
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
-
-	protected void updateSpotPrices(String dataSpotFormatada, SpotGoogle spot, Connection conexao,
-			ResultSet resultadoSelect, String unitPrice) {
-
-		PreparedStatement pstm = null;
-
-		try {
-			pstm = conexao.prepareStatement("update spotprices set price = ?, data_req = ? where cod_spot = ?");
-
-			pstm.setString(1, unitPrice.replaceAll(",", "."));
-			pstm.setString(2, dataSpotFormatada);
-			pstm.setString(3, resultadoSelect.getString("cod_spot"));
-
-			pstm.execute();
-
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
-
-	protected void insertSpotPrices(String dataSpotFormatada, SpotGoogle spot, Connection conexao, String unitPrice,
-			int countRegions) {
-
-		PreparedStatement pstm = null;
-
-		try {
-			pstm = conexao.prepareStatement("insert into spotprices (cloud_name, instance_type,"
-					+ "region, product_description, price, data_req) values (?, ?, ?, ?, ?, ?)");
-
-			pstm.setString(1, "GOOGLE");
-			pstm.setString(2, spot.getCategory().getResourceGroup());
-			pstm.setString(3, spot.getServiceRegions().get(countRegions));
-			pstm.setString(4, spot.getDescription());
-			pstm.setString(5, unitPrice.replaceAll(",", "."));
-			pstm.setString(6, dataSpotFormatada);
-
-			pstm.execute();
-
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-
-		}
-
-	}
-
-	
 }
-

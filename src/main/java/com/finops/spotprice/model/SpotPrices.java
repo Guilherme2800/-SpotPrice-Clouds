@@ -12,13 +12,12 @@ import lombok.Data;
 @Data
 @Entity
 @Table (name = "spotprices")
-public class Instances {
+public class SpotPrices {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	Long cod_spot;
 	
-	@Column(name = "region")
 	private String region;
 	
 	@Column(name = "cloud_name")
@@ -30,7 +29,6 @@ public class Instances {
 	@Column(name = "product_description")
 	private String productDescription;
 	
-	@Column(name = "price")
 	private double price;
 	
 	@Column(name = "data_req")
