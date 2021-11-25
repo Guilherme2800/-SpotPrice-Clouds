@@ -1,10 +1,5 @@
 package com.finops.spotprice.model;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -16,7 +11,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.finops.spotprice.model.azurecloud.*;
-import com.finops.spotprice.service.ConexaoMariaDb;
+import com.finops.spotprice.repository.PriceHistoryRepository;
+import com.finops.spotprice.repository.SpotRepository;
 import com.finops.spotprice.service.JsonForObjectAzure;
 
 @Component
@@ -35,21 +31,16 @@ public class EnviarAzure {
 	final String URL = "https://prices.azure.com/api/retail/prices?$skip=0&$filter=serviceName%20eq%20%27Virtual%20Machines%27%20and%20priceType%20eq%20%27Consumption%27%20and%20endswith(meterName,%20%27Spot%27)%20and%20effectiveStartDate%20eq%20"
 			+ sdf.format(data) + "-01";
 
+	@Autowired
+	private SpotRepository spotRepository;
+
+	@Autowired
+	private PriceHistoryRepository priceHistoryRepository;
+
 	// @Scheduled(fixedDelay = HORA)
 	public void enviar() {
 
-		// -------------------VARIAVEIS -----------
-
-		// Instancia o objeto de conexão com o banco de dados
-		ConexaoMariaDb objetoMariaDb = new ConexaoMariaDb();
-
-		// recebe a conexão
-		Connection conexao = objetoMariaDb.conectar();
-
-		// Objeto que prepara o código SQL
-		PreparedStatement pstm = null;
-
-		// ------------- INICIO DO MÉTODO ----------------
+		SpotPrices spotPrices;
 
 		// Recebe o json convertido
 		SpotAzureArray azureSpot = solicitarObjetoAzure(URL);
@@ -59,37 +50,33 @@ public class EnviarAzure {
 		boolean proximo = true;
 
 		while (proximo) {
+			for (SpotAzure spotAzure : azureSpot.getItems()) {
 
-			for (SpotAzure spot : azureSpot.getItems()) {
+				if (spotAzure.getUnitPrice() != 0) {
 
-				if (spot.getUnitPrice() != 0) {
+					spotPrices = null;
 
 					// Formata a data
 					DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
-					OffsetDateTime dataSpot = OffsetDateTime.parse(spot.getEffectiveStartDate());
+					OffsetDateTime dataSpot = OffsetDateTime.parse(spotAzure.getEffectiveStartDate());
 					String dataSpotFormatada = dataSpot.format(formatarPadrao);
+					
+					// verificar se já existe esse dado no banco de dados
+					spotPrices = selectSpotPrices(spotAzure);
 
-					// Select para verificar se já existe esse dado no banco de dados
-					ResultSet resultadoSelect = selectSpotPrices(pstm, conexao, spot);
+					// Se o dado já estar no banco de dados, entra no IF
+					if (spotPrices != null) {
+						
+						// Insere o dado atual na tabela de historico
+						insertPricehistory(spotPrices);
+						
+						// Atualiza o dado atual do spotPrices com a nova data e preco
+						updateSpotPrices(spotAzure, spotPrices, dataSpotFormatada);
 
-					try {
-						// Se o dado já estar no banco de dados, entra no IF
-						if (resultadoSelect.next()) {
+					} else {
+						// Se o dado não existir, insere ele no banco de dados
+						insertSpotPrices(spotAzure, dataSpotFormatada);
 
-							// Insere o dado atual na tabela de historico
-							insertPricehistory(pstm, conexao, resultadoSelect);
-
-							// Atualiza o dado atual do spotPrices com a nova data e preco
-							updateSpotPrices(dataSpotFormatada, spot, pstm, conexao, resultadoSelect);
-
-						} else {
-							// Se o dado não existir, insere ele no banco de dados
-							insertSpotPrices(dataSpotFormatada, spot, pstm, conexao);
-
-						}
-					} catch (SQLException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
 					}
 
 				}
@@ -107,8 +94,6 @@ public class EnviarAzure {
 			}
 		}
 
-		objetoMariaDb.desconectar();
-
 	}
 
 	protected SpotAzureArray solicitarObjetoAzure(String URL) {
@@ -121,82 +106,45 @@ public class EnviarAzure {
 		return azureArrayObject;
 	}
 
-	protected ResultSet selectSpotPrices(PreparedStatement pstm, Connection conexao, SpotAzure spot) {
+	protected SpotPrices selectSpotPrices(SpotAzure spotAzure) {
 
-		ResultSet resultado = null;
-
-		try {
-			pstm = conexao.prepareStatement("select * from spotprices where cloud_name = 'azure' and instance_type = '"
-					+ spot.getSkuName() + "'" + "and region = '" + spot.getLocation() + "' and product_description = '"
-					+ spot.getProductName() + "' ");
-
-			resultado = pstm.executeQuery();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		return resultado;
+		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",spotAzure.getSkuName(),
+				spotAzure.getLocation(), spotAzure.getProductName());
 
 	}
 
-	protected void insertPricehistory(PreparedStatement pstm, Connection conexao, ResultSet resultadoSelect) {
+	protected void insertPricehistory(SpotPrices spotPrices) {
 
-		try {
-			pstm = conexao.prepareStatement("insert into pricehistory (cod_spot, price, data_req) values (?, ?, ?)");
-			pstm.setString(1, resultadoSelect.getString("cod_spot"));
-			pstm.setString(2, resultadoSelect.getString("price"));
-			pstm.setString(3, resultadoSelect.getString("data_req"));
+		PriceHistory priceHistory = new PriceHistory();
 
-			pstm.execute();
+		priceHistory.setCodSpot(spotPrices.getCod_spot());
+		priceHistory.setPrice(spotPrices.getPrice());
+		priceHistory.setDataReq(spotPrices.getDataReq());
 
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		priceHistoryRepository.save(priceHistory);
 
 	}
 
-	protected void updateSpotPrices(String dataSpotFormatada, SpotAzure spot, PreparedStatement pstm, Connection conexao,
-			ResultSet resultadoSelect) {
+	protected void updateSpotPrices(SpotAzure spotAzure, SpotPrices spotPrices, String dataSpotFormatada) {
 
-		try {
-			pstm = conexao.prepareStatement("update spotprices set price = ?, data_req = ? where cod_spot = ?");
+		spotPrices.setPrice(spotAzure.getUnitPrice());
+		spotPrices.setDataReq(dataSpotFormatada);
 
-			pstm.setDouble(1, spot.getUnitPrice());
-			pstm.setString(2, dataSpotFormatada);
-			pstm.setString(3, resultadoSelect.getString("cod_spot"));
-
-			pstm.execute();
-
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		spotRepository.save(spotPrices);
 
 	}
 
-	protected void insertSpotPrices(String dataSpotFormatada, SpotAzure spot, PreparedStatement pstm,
-			Connection conexao) {
+	protected void insertSpotPrices(SpotAzure spotAzure, String dataSpotFormatada) {
 
-		try {
-			pstm = conexao.prepareStatement("insert into spotprices (cloud_name, instance_type,"
-					+ "region, product_description, price, data_req) values (?, ?, ?, ?, ?, ?)");
+		SpotPrices newSpotPrice = new SpotPrices();
+		newSpotPrice.setCloudName("AZURE");
+		newSpotPrice.setInstanceType(spotAzure.getSkuName());
+		newSpotPrice.setRegion(spotAzure.getLocation());
+		newSpotPrice.setProductDescription(spotAzure.getProductName());
+		newSpotPrice.setPrice(spotAzure.getUnitPrice());
+		newSpotPrice.setDataReq(dataSpotFormatada);
 
-			pstm.setString(1, "AZURE");
-			pstm.setString(2, spot.getSkuName());
-			pstm.setString(3, spot.getLocation());
-			pstm.setString(4, spot.getProductName());
-			pstm.setDouble(5, spot.getUnitPrice());
-			pstm.setString(6, dataSpotFormatada);
-
-			pstm.execute();
-
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-
-		}
+		spotRepository.save(newSpotPrice);
 
 	}
 

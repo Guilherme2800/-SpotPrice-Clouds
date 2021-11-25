@@ -12,8 +12,8 @@ import com.finops.spotprice.model.SpotPrices;
 public interface SpotRepository extends JpaRepository<SpotPrices, Long>{
 
 	// Query SQL
-	@Query (value = "select * from spotprices where cloud_name = 'google' and instance_type = ? and region = ? and product_description = ?", nativeQuery = true)
-	SpotPrices findBySelectUsinginstanceTypeAndregionAndProductDescription(String instanceType, String region, String ProductDescription);
+	@Query (value = "select * from spotprices where cloud_name = ? and instance_type = ? and region = ? and product_description = ?", nativeQuery = true)
+	SpotPrices findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription(String cloudName, String instanceType, String region, String ProductDescription);
 	
 	
 	
