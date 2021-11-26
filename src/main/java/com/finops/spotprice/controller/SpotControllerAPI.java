@@ -3,6 +3,8 @@ package com.finops.spotprice.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,36 +25,37 @@ public class SpotControllerAPI {
 	private SpotRepository repository;
 	
 	@GetMapping("/listar")
-	public List<SpotPrices> listar(){
-		return repository.findAll();
+	public Page<SpotPrices> listar(Pageable pageable){
+		return repository.findAll(pageable);
 	}
 	
 	@GetMapping("/listar/cloud/{cloudName}")
-	public List<SpotPrices> listarCloud(@PathVariable String cloudName){
-		return repository.findBycloudName(cloudName);
+	public Page<SpotPrices> listarCloud(@PathVariable String cloudName, Pageable pageable){
+		return repository.findBycloudName(cloudName, pageable);
+	}
+	
+	@GetMapping("/listar/tipoInstancia/{tipoInstancia}")
+	public Page<SpotPrices> listarTipoInstancia(@PathVariable String tipoInstancia, Pageable pageable){
+		return repository.findByinstanceType(tipoInstancia, pageable);
 	}
 	
 	
 	@GetMapping("/listar/cloud/{cloudName}/region/{region}")
-	public List<SpotPrices> listarCloudRegion(@PathVariable String cloudName, @PathVariable String region){
-		return repository.findBycloudNameAndRegion(cloudName, region);
-	}
-	
-	@GetMapping("/listar/cloud/{cloudName}/region/{region}/instanceType/{instanceType}")
-	public List<SpotPrices> listarCloudRegionInstanceType(@PathVariable String cloudName, @PathVariable String region, @PathVariable String instanceType){
-		return repository.findBycloudNameAndRegionAndInstanceType(cloudName, region, instanceType);
+	public Page<SpotPrices> listarCloudRegion(@PathVariable String cloudName, @PathVariable String region, Pageable pageable){
+		return repository.findBycloudNameAndRegion(cloudName, region, pageable);
 	}
 	
 	@GetMapping("/listar/cloud/{cloudName}/instanceType/{instanceType}")
-	public List<SpotPrices> listarCloudInstancetype(@PathVariable String cloudName, @PathVariable String instanceType){
-		return repository.findBycloudNameAndInstanceType(cloudName, instanceType);
+	public Page<SpotPrices> listarCloudInstancetype(@PathVariable String cloudName, @PathVariable String instanceType, Pageable pageable){
+		return repository.findBycloudNameAndInstanceType(cloudName, instanceType, pageable);
 	}
 	
-
-	@GetMapping("/listar/tipoInstancia/{tipoInstancia}")
-	public List<SpotPrices> listarTipoInstancia(@PathVariable String tipoInstancia){
-		return repository.findByinstanceType(tipoInstancia);
+	@GetMapping("/listar/cloud/{cloudName}/region/{region}/instanceType/{instanceType}")
+	public Page<SpotPrices> listarCloudRegionInstanceType(@PathVariable String cloudName, @PathVariable String region, @PathVariable String instanceType, Pageable pageable){
+		return repository.findBycloudNameAndRegionAndInstanceType(cloudName, region, instanceType, pageable);
 	}
+	
+	
 	
 }
 	
