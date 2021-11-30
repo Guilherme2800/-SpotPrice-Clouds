@@ -10,23 +10,17 @@ import java.util.regex.Pattern;
 
 public class Testando {
 
-	static List<String> iframe = new ArrayList<String>();
-	static List<String> machine = new ArrayList<String>();
-	static int i;
+	private List<String> iframe = new ArrayList<String>();
+	private List<String> machine = new ArrayList<String>();
 
-	public void getPage(URL url, File file) throws IOException {
+	public List<String> buscarIframe(URL url, File file) throws IOException {
 		BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
-
-		BufferedWriter out = new BufferedWriter(new FileWriter(file));
 
 		String inputLine;
 
 		while ((inputLine = in.readLine()) != null) {
 
 			if (inputLine.contains("machine_types")) {
-				int posEnd = inputLine.indexOf("\"");
-
-				// String nome = (String) inputLine.subSequence(8, 15);
 
 				// Pula duas linhas
 				inputLine = in.readLine();
@@ -65,91 +59,38 @@ public class Testando {
 
 				}
 
-//				// Imprime página no console
-//				if (inputLine.contains("<iframe")) {
-//					String regex = "\"([^\"]*)\""; // regex com um grupo entre aspas
-//					Pattern pattern = Pattern.compile(regex);
-//					Matcher matcher = pattern.matcher(inputLine); // linha é a variável que contém a linha que foi lida
-//																	// do
-//																	// arquivo
-//					if (matcher.find()) {
-//						String iframeUrl = matcher.group(1); // obtém o grupo lido da regex
-//						iframe.add("https://cloud.google.com" + iframeUrl);
-//					}
-//				}
-				// System.out.println(inputLine);
-
-				// Grava pagina no arquivo
-				out.write(inputLine);
-				out.newLine();
 			}
-			
+
 		}
 
-		
 		in.close();
-		out.flush();
-		out.close();
+		return iframe;
 	}
 
-	public static void main(String[] args) {
-		URL url = null;
-		File file = new File("D:\\test\\page2.html");
-		try {
-			url = new URL("https://cloud.google.com/compute/all-pricing");
-			new Testando().getPage(url, file);
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		List<String> price = precoInstancia();
-
-		try {
-			instanceTypes();
-			
-			int quantidadePrecos = price.size() / machine.size();
-			int indicePrecos = 0;
-			System.out.println("--------TABELA DE PREÇOS------");
-			for (String maquina : machine) {
-				System.out.println("Maquina " + maquina);
-				
-				for(int i = 0; i < quantidadePrecos; i++) {
-					System.out.println(price.get(indicePrecos));
-					indicePrecos++;
-				}
-				
-				System.out.println("\n\n");
-			}
-			
-
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
-
-	public static void instanceTypes() {
+	public List<String> instanceTypes(String pagina) {
 
 		String inputLine;
 		URL url = null;
 
 		try {
-			url = new URL(iframe.get(5));
+			url = new URL(pagina);
 
 			BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
 
 			while ((inputLine = in.readLine()) != null) {
 
 				if (inputLine.contains("<tr>")) {
+					// Pula uma linha
 					inputLine = in.readLine();
 
 					if (!inputLine.contains("<a") && !inputLine.contains("<strong")) {
 
-						String nome = (String) inputLine.replaceAll("<td>", "");
-						nome = nome.replaceAll("</td>", "");
+						if (inputLine.contains("<tr>")) {
+							inputLine = in.readLine();
+						}
+
+						String nome = (String) inputLine.replaceAll("<td>", "").replaceAll("</td>", "")
+								.replaceAll("  ", "").replaceAll("-", " ");
 						machine.add(nome);
 
 					}
@@ -168,20 +109,19 @@ public class Testando {
 			e.printStackTrace();
 		}
 
+		return machine;
 	}
 
-	public static List<String> precoInstancia() {
+	public List<String> precoInstancia(String pagina) {
 
 		List<String> price = new ArrayList<String>();
 		List<String> aux = new ArrayList<String>();
 
 		String inputLine;
 		URL url = null;
-		int quantidade = 0;
-		double valor;
 
 		try {
-			url = new URL(iframe.get(0));
+			url = new URL(pagina);
 
 			BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
 
@@ -201,7 +141,7 @@ public class Testando {
 
 							if (inputLine.contains("hourly")) {
 
-								aux.add(inputLine);
+								aux.add(inputLine.replaceAll("-hourly", "").replaceAll(" ", ""));
 
 							}
 
@@ -233,6 +173,134 @@ public class Testando {
 		}
 
 		return price;
+	}
+
+	public String region(String linha) {
+
+		int indice = linha.indexOf("=");
+		String abreviacaoRegion = (String) linha.subSequence(0, indice);
+
+		switch (abreviacaoRegion) {
+
+		case "io":
+			return "Iowa (us-central1)";
+
+		case "ore":
+			return "Oregon (us-west1)";
+
+		case "slc":
+			return "Salt Lake City (us-west3)";
+
+		case "la":
+			return "Los Angeles (us-west2)";
+
+		case "lv":
+			return "Las Vegas (us-west4)";
+
+		case "nv":
+			return "Nothern Virginia";
+
+		case "sc":
+			return "Soth Carolina";
+
+		case "mtreal":
+			return "Montreal (northamerica-northeast1)";
+
+		case "tor":
+			return "Toronto (nortamerica-northeast2)";
+
+		case "spaulo":
+			return "São Paulo (southamerica-east)";
+
+		case "sant":
+			return "Satiago (southamerica-west1)";
+
+		case "eu":
+			return "Belgium (europe-west1)";
+
+		case "fi":
+			return "Finland (europe-north1)";
+
+		case "lon":
+			return "London (europe-west2)";
+
+		case "ffurt":
+			return "Frankfurt (europe-west3)";
+
+		case "nether":
+			return "Netherlands (europe-west4)";
+
+		case "zur":
+			return "Zurich (europe-west6)";
+
+		case "wsaw":
+			return "Warsaw (europe-central2)";
+
+		case "mbai":
+			return "Mumbai (asia-south1)";
+
+		case "del":
+			return "Delhi (asia-south2)";
+
+		case "sg":
+			return "Singapore (asia-southeast1)";
+
+		case "jk":
+			return "Jakarta (asia-southeast2)";
+
+		case "syd":
+			return "Sydney (australia-southeast1)";
+
+		case "mel":
+			return "Melbourn (australia-southeast2)";
+
+		case "tw":
+			return "Taiwan (asia-east1)";
+
+		case "hk":
+			return "Hong Kong (asia-east2)";
+
+		case "ja":
+			return "Tokyo (asia-northeast1)";
+
+		case "osa":
+			return "Osaka (asia-northeast2)";
+
+		case "kr":
+			return "Seoul (asia-northeast3)";
+
+		default:
+			return abreviacaoRegion;
+		}
+
+	}
+
+	public Double obterPrecoConvertido(String conteudo) {
+
+		String regex = "\"([^\"]*)\"";
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(conteudo);
+
+		if (matcher.find()) {
+			String con = (String) matcher.group(1);
+
+			if (con.contains("otavail")) {
+				return 0.0;
+			} else if (con.length() > 10) {
+				return 0.0;
+			} else {
+				try {
+					con = (String) matcher.group(1).subSequence(1, 8);
+				} catch (java.lang.StringIndexOutOfBoundsException e) {
+					return 0.0;
+				}
+
+				return Double.parseDouble(con);
+			}
+
+		}
+
+		return 0.0;
 	}
 
 }

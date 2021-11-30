@@ -1,9 +1,15 @@
 package com.finops.spotprice.model;
 
-
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -12,9 +18,11 @@ import org.springframework.stereotype.Component;
 
 import com.finops.spotprice.model.googlecloud.SpotGoogle;
 import com.finops.spotprice.model.googlecloud.SpotGoogleArray;
+import com.finops.spotprice.model.googlecloud.Testando;
 import com.finops.spotprice.repository.PriceHistoryRepository;
 import com.finops.spotprice.repository.SpotRepository;
 import com.finops.spotprice.service.JsonForObjectGoogle;
+import com.finops.spotprice.model.googlecloud.Testando;
 
 @Component
 @EnableScheduling
@@ -32,106 +40,91 @@ public class EnviarGoogle {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
+	private List<String> iframe = new ArrayList<String>();
+	private List<String> machine = new ArrayList<String>();
+	private Testando test = new Testando();
+
 	@Scheduled(fixedDelay = HORA)
 	public void enviar() {
 
-		// Controlador While
-		boolean proximo = true;
-		
+		// Pega a data atual
+		Date data = new Date(System.currentTimeMillis());
+
+		// Formata para o padrão de leitura da AWS.
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
 		SpotPrices spotPrices;
-		
-		// Recebe o json convertido
-		SpotGoogleArray googleSpot = solicitarObjetoGoogle(URL);
 
 		System.out.println("\nEnviando GOOGLE");
+		URL url = null;
+		File file = new File("D:\\test\\page2.html");
 
-		while (proximo) {
+		try {
 
-			// Percorre o array de instancias da pagina
-			for (SpotGoogle spotGoogle : googleSpot.getSkus()) {
+			url = new URL("https://cloud.google.com/compute/all-pricing");
+			iframe = test.buscarIframe(url, file);
 
-				// Verifica quais são do tipo SPOT
-				if (spotGoogle.getCategory().getUsageType().contains("Preemptible")) {
-					
-					// Formata a data
-					DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
-					OffsetDateTime dataSpot = OffsetDateTime.parse(spotGoogle.getPricingInfo().get(0).getEffectiveTime());
-					String dataSpotFormatada = dataSpot.format(formatarPadrao);
+			for (int x = 0; x < iframe.size(); x++) {
 
-					// Realiza o calculo do preço da instancia
-					Double unitPrice = calcularPreco(spotGoogle);
+				machine = test.instanceTypes(iframe.get(x));
+				List<String> price = test.precoInstancia(iframe.get(x));
 
-					// Percorre as regions que aquela instancia está disponivel
-					for (int countRegions = 0; countRegions < spotGoogle.getServiceRegions().size(); countRegions++) {
+				int quantidadePrecos = price.size() / machine.size();
+				int indicePrecos = 0;
+				for (int y = 0; y < machine.size(); y++) {
 
+					for (int z = 0; z < quantidadePrecos; z++) {
 						spotPrices = null;
-						spotPrices = selectSpotPrices(spotGoogle, countRegions);
+
+						spotPrices = selectSpotPrices("GOOGLE", machine.get(y), test.region(price.get(indicePrecos)),
+								"");
 
 						// Se o dado já estar no banco de dados, entra no IF
+
 						if (spotPrices != null) {
 
 							// Insere o dado atual na tabela de historico
 							insertPriceHistory(spotPrices);
 
-							// Atualiza o dado atual com a nova data e preco
-							updateSpotPrices(spotPrices, unitPrice, dataSpotFormatada);
+							// Atualiza o dado atual do spotPrices com a nova data e preco
+							updateSpotPrices(spotPrices, test.obterPrecoConvertido(price.get(indicePrecos)),
+									sdf.format(data));
 
 						} else {
-
 							// Se o dado não existir, insere ele no banco de dados
-							insertSporprices(spotGoogle, countRegions, unitPrice, dataSpotFormatada);
+							
+							if (test.obterPrecoConvertido(price.get(indicePrecos)) != 0.0 && !machine.get(y).contains("Predefined")) {
+								insertSpotprices("GOOGLE", machine.get(y), test.region(price.get(indicePrecos)), "",
+									test.obterPrecoConvertido(price.get(indicePrecos)), sdf.format(data));
+							}
+							
 
 						}
 
+						indicePrecos++;
+
 					}
-
 				}
-
+				System.out.println(iframe.get(5));
+				machine.removeAll(machine);
+				
 			}
 
-			// Controle se a existe uma proxima pagina
-			if (googleSpot.getNextPageToken() == null || googleSpot.getSkus().size() != 5000) {
-				proximo = false;
-			} else {
-				googleSpot = solicitarObjetoGoogle(URL + "&pageToken=" + googleSpot.getNextPageToken());
-
-			}
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
 		System.out.println("Terminou GOOGLE");
 
 	}
 
-	protected Double calcularPreco(SpotGoogle spot) {
-
-		// Formatar valor da instancia
-		DecimalFormat formatar = new DecimalFormat("0.000000");
-
-		// Realiza o calculo do preço da instancia
-		String preco = formatar.format(
-				spot.getPricingInfo().get(0).getPricingExpression().getTieredRates().get(0).getUnitPrice().getNanos()
-						* Math.pow(10, -9));
-
-		preco += spot.getPricingInfo().get(0).getPricingExpression().getTieredRates().get(0).getUnitPrice().getUnits();
-
-		return Double.valueOf(preco.replaceAll(",", ".")).doubleValue();
-	}
-
-	protected SpotGoogleArray solicitarObjetoGoogle(String URL) {
-
-		// Instancia o objeto que vai converter o JSON para objeto
-		JsonForObjectGoogle JsonForGoogle = new JsonForObjectGoogle();
-
-		SpotGoogleArray googleArrayObject = JsonForGoogle.converter(URL);
-
-		return googleArrayObject;
-	}
-
-	protected SpotPrices selectSpotPrices(SpotGoogle spotGoogle, int countRegions) {
+	protected SpotPrices selectSpotPrices(String cloudName, String instanceType, String region,
+			String productDescription) {
 
 		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("GOOGLE",
-				spotGoogle.getCategory().getResourceGroup(), spotGoogle.getServiceRegions().get(countRegions),
-				spotGoogle.getDescription());
+				instanceType, region, productDescription);
 	}
 
 	protected void insertPriceHistory(SpotPrices spotPrices) {
@@ -152,14 +145,14 @@ public class EnviarGoogle {
 		spotRepository.save(spotPrices);
 	}
 
-	protected void insertSporprices(SpotGoogle spotGoogle, int countRegions, double unitPrice,
-			String dataSpotFormatada) {
+	protected void insertSpotprices(String cloudName, String instanceType, String region, String productDescription,
+			double unitPrice, String dataSpotFormatada) {
 
 		SpotPrices newSpotPrice = new SpotPrices();
 		newSpotPrice.setCloudName("GOOGLE");
-		newSpotPrice.setInstanceType(spotGoogle.getCategory().getResourceGroup());
-		newSpotPrice.setRegion(spotGoogle.getServiceRegions().get(countRegions));
-		newSpotPrice.setProductDescription(spotGoogle.getDescription());
+		newSpotPrice.setInstanceType(instanceType);
+		newSpotPrice.setRegion(region);
+		newSpotPrice.setProductDescription(productDescription);
 		newSpotPrice.setPrice(unitPrice);
 		newSpotPrice.setDataReq(dataSpotFormatada);
 
