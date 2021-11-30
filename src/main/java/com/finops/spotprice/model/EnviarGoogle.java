@@ -32,7 +32,7 @@ public class EnviarGoogle {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	// @Scheduled(fixedDelay = HORA)
+	@Scheduled(fixedDelay = HORA)
 	public void enviar() {
 
 		// Controlador While
@@ -51,8 +51,8 @@ public class EnviarGoogle {
 			for (SpotGoogle spotGoogle : googleSpot.getSkus()) {
 
 				// Verifica quais são do tipo SPOT
-				if (spotGoogle.getDescription().contains("Spot")) {
-
+				if (spotGoogle.getCategory().getUsageType().contains("Preemptible")) {
+					
 					// Formata a data
 					DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
 					OffsetDateTime dataSpot = OffsetDateTime.parse(spotGoogle.getPricingInfo().get(0).getEffectiveTime());
