@@ -191,18 +191,19 @@ public class FiltrosHtmlGoogle {
 				return 0.0;
 			} else if (con.length() > 10) {
 				return 0.0;
-			} else {
-				try {
-					con = (String) matcher.group(1).subSequence(1, 8);
-				} catch (java.lang.StringIndexOutOfBoundsException e) {
-					return 0.0;
-				}
-
-				return Double.parseDouble(con);
 			}
 
+			if (con.length() == 5){
+				con = (String) matcher.group(1).subSequence(1, 5);
+				return Double.parseDouble(con);
+			} else if (con.length() == 6) {
+				con = (String) matcher.group(1).subSequence(1, 6);
+				return Double.parseDouble(con);
+			} else {
+				con = (String) matcher.group(1).subSequence(1, 7);
+				return Double.parseDouble(con);
+			}
 		}
-
 		return 0.0;
 	}
 
@@ -305,5 +306,5 @@ public class FiltrosHtmlGoogle {
 		}
 
 	}
-	
+
 }

@@ -1,6 +1,5 @@
 package com.finops.spotprice.model;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -13,11 +12,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-
 import com.finops.spotprice.service.FiltrosHtmlGoogle;
 import com.finops.spotprice.repository.PriceHistoryRepository;
 import com.finops.spotprice.repository.SpotRepository;
-
 
 @Component
 @EnableScheduling
@@ -38,20 +35,19 @@ public class EnviarGoogle {
 	private List<String> iframe = new ArrayList<String>();
 	private List<String> machine = new ArrayList<String>();
 	private FiltrosHtmlGoogle googleDadosSpot = new FiltrosHtmlGoogle();
-	
+
 	@Scheduled(fixedDelay = HORA)
 	public void enviar() {
 
 		// Pega a data atual
 		Date data = new Date(System.currentTimeMillis());
-		
+
 		// Formata para a data.
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
 		SpotPrices spotPrices;
 
 		System.out.println("\nEnviando GOOGLE");
-		
 
 		try {
 			// Busca a lista de iframes (Links que levam aos dados das instancias)
@@ -65,39 +61,46 @@ public class EnviarGoogle {
 				// Pega os instance types do iframe atual
 				machine = googleDadosSpot.instanceTypes(iframe.get(x));
 				// Pega uma string com a região e preço da instancia
-				List<String> price = googleDadosSpot.precoInstanciaString(iframe.get(x));
+				List<String> priceString = googleDadosSpot.precoInstanciaString(iframe.get(x));
 
 				// Define quantos preços tem para cada instancia.
-				int quantidadePrecos = price.size() / machine.size();
-				
+				int quantidadePrecos = priceString.size() / machine.size();
+
 				// indica o indice atual na lista total de preços
 				int indicePrecos = 0;
-				
-				// Percorre todas as intancias 
+
+				// Percorre todas as intancias
 				for (int y = 0; y < machine.size(); y++) {
 
 					// percorre todos os preços da determinada instância.
 					for (int z = 0; z < quantidadePrecos; z++) {
 						spotPrices = null;
-						spotPrices = selectSpotPrices("GOOGLE", machine.get(y), googleDadosSpot.region(price.get(indicePrecos)),"");
+						String regiao = googleDadosSpot.region(priceString.get(indicePrecos));
+
+						spotPrices = selectSpotPrices("GOOGLE", machine.get(y), regiao, "");
+
+						double precoConvertido = googleDadosSpot.obterPrecoConvertido(priceString.get(indicePrecos));
 
 						// Se o dado já estar no banco de dados, entra no IF
 						if (spotPrices != null) {
 
-							// Insere o dado atual na tabela de historico
-							insertPriceHistory(spotPrices);
+							PriceHistory priceHistory = selectPriceHistory(spotPrices);
 
-							// Atualiza o dado atual do spotPrices com a nova data e preco
-							updateSpotPrices(spotPrices, googleDadosSpot.obterPrecoConvertido(price.get(indicePrecos)),
-									sdf.format(data));
+							// Se o dado não estiver já em priceHistory, entra no IF
+							if (priceHistory == null) {
+								// Insere o dado atual na tabela de historico
+								insertPriceHistory(spotPrices);
 
+								// Atualiza o dado atual do spotPrices com a nova data e preco
+								updateSpotPrices(spotPrices, precoConvertido, sdf.format(data));
+							}
 						} else {
 							// Se o dado não existir, insere ele no banco de dados
-							if (googleDadosSpot.obterPrecoConvertido(price.get(indicePrecos)) != 0 && !machine.get(y).contains("Predefined")  && !machine.get(y).equalsIgnoreCase("")) {
-								insertSpotprices("GOOGLE", machine.get(y), googleDadosSpot.region(price.get(indicePrecos)), "",
-									googleDadosSpot.obterPrecoConvertido(price.get(indicePrecos)), sdf.format(data));
+							if (!machine.get(y).contains("Predefined") && !machine.get(y).equalsIgnoreCase("")
+									&& precoConvertido != 0) {
+								insertSpotprices("GOOGLE", machine.get(y), regiao, "", precoConvertido,
+										sdf.format(data));
 							}
-							
 
 						}
 
@@ -107,7 +110,7 @@ public class EnviarGoogle {
 				}
 				// Limpa a lista de instancias.
 				machine.removeAll(machine);
-				
+
 			}
 
 		} catch (MalformedURLException e) {
@@ -125,6 +128,13 @@ public class EnviarGoogle {
 
 		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("GOOGLE",
 				instanceType, region, productDescription);
+	}
+
+	protected PriceHistory selectPriceHistory(SpotPrices spotPrices) {
+
+		return priceHistoryRepository.findBySelectUsingcodSpotAndpriceAnddataReq(spotPrices.getCod_spot(),
+				spotPrices.getPrice(), spotPrices.getDataReq());
+
 	}
 
 	protected void insertPriceHistory(SpotPrices spotPrices) {
