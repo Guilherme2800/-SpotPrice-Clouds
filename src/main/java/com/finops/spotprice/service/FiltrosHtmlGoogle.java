@@ -1,6 +1,9 @@
-package com.finops.spotprice.model.googlecloud;
+package com.finops.spotprice.service;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -8,12 +11,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Testando {
+public class FiltrosHtmlGoogle {
 
 	private List<String> iframe = new ArrayList<String>();
 	private List<String> machine = new ArrayList<String>();
 
-	public List<String> buscarIframe(URL url, File file) throws IOException {
+	public List<String> buscarIframe(URL url) throws IOException {
 		BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
 
 		String inputLine;
@@ -112,7 +115,7 @@ public class Testando {
 		return machine;
 	}
 
-	public List<String> precoInstancia(String pagina) {
+	public List<String> precoInstanciaString(String pagina) {
 
 		List<String> price = new ArrayList<String>();
 		List<String> aux = new ArrayList<String>();
@@ -175,6 +178,34 @@ public class Testando {
 		return price;
 	}
 
+	public Double obterPrecoConvertido(String conteudo) {
+
+		String regex = "\"([^\"]*)\"";
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(conteudo);
+
+		if (matcher.find()) {
+			String con = (String) matcher.group(1);
+
+			if (con.contains("otavail")) {
+				return 0.0;
+			} else if (con.length() > 10) {
+				return 0.0;
+			} else {
+				try {
+					con = (String) matcher.group(1).subSequence(1, 8);
+				} catch (java.lang.StringIndexOutOfBoundsException e) {
+					return 0.0;
+				}
+
+				return Double.parseDouble(con);
+			}
+
+		}
+
+		return 0.0;
+	}
+
 	public String region(String linha) {
 
 		int indice = linha.indexOf("=");
@@ -198,10 +229,10 @@ public class Testando {
 			return "Las Vegas (us-west4)";
 
 		case "nv":
-			return "Nothern Virginia";
+			return "Nothern Virginia (us-east4)";
 
 		case "sc":
-			return "Soth Carolina";
+			return "Soth Carolina (us-east1)";
 
 		case "mtreal":
 			return "Montreal (northamerica-northeast1)";
@@ -274,33 +305,5 @@ public class Testando {
 		}
 
 	}
-
-	public Double obterPrecoConvertido(String conteudo) {
-
-		String regex = "\"([^\"]*)\"";
-		Pattern pattern = Pattern.compile(regex);
-		Matcher matcher = pattern.matcher(conteudo);
-
-		if (matcher.find()) {
-			String con = (String) matcher.group(1);
-
-			if (con.contains("otavail")) {
-				return 0.0;
-			} else if (con.length() > 10) {
-				return 0.0;
-			} else {
-				try {
-					con = (String) matcher.group(1).subSequence(1, 8);
-				} catch (java.lang.StringIndexOutOfBoundsException e) {
-					return 0.0;
-				}
-
-				return Double.parseDouble(con);
-			}
-
-		}
-
-		return 0.0;
-	}
-
+	
 }
