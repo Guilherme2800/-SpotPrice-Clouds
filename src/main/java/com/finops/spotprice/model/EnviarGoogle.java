@@ -5,16 +5,25 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.Map.Entry;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.finops.spotprice.service.FiltrosHtmlGoogle;
 import com.finops.spotprice.repository.PriceHistoryRepository;
 import com.finops.spotprice.repository.SpotRepository;
+import com.finops.spotprice.service.ReceberJson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 @Component
 @EnableScheduling
@@ -24,17 +33,13 @@ public class EnviarGoogle {
 	private final long MINUTO = SEGUNDO * 60;
 	private final long HORA = MINUTO * 60;
 
-	final String URL = "https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus?key=AIzaSyA9eUyryawCIAgta6f2TzUgVEijCmvauns";
+	final String URL = "https://cloudpricingcalculator.appspot.com/static/data/pricelist.json?v=1638364907294";
 
 	@Autowired
 	private SpotRepository spotRepository;
 
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
-
-	private List<String> iframe = new ArrayList<String>();
-	private List<String> machine = new ArrayList<String>();
-	private FiltrosHtmlGoogle googleDadosSpot = new FiltrosHtmlGoogle();
 
 	@Scheduled(fixedDelay = HORA)
 	public void enviar() {
@@ -47,74 +52,109 @@ public class EnviarGoogle {
 
 		SpotPrices spotPrices;
 
+		ReceberJson json = new ReceberJson();
+
 		System.out.println("\nEnviando GOOGLE");
 
 		try {
-			// Busca a lista de iframes (Links que levam aos dados das instancias)
-			URL url = null;
-			url = new URL("https://cloud.google.com/compute/all-pricing");
-			iframe = googleDadosSpot.buscarIframe(url);
 
-			// Percorre a lista dos iframes.
-			for (int x = 0; x < iframe.size(); x++) {
+			// Recebe o JSON da URL
+			JsonObject jsonObject = json.requisitarJson(URL);
 
-				// Pega os instance types do iframe atual
-				machine = googleDadosSpot.instanceTypes(iframe.get(x));
-				// Pega uma string com a região e preço da instancia
-				List<String> priceString = googleDadosSpot.precoInstanciaString(iframe.get(x));
+			// Pega o objeto JSON que contém as instancias
+			JsonObject listInstancias = (JsonObject) jsonObject.get("gcp_price_list");
 
-				// Define quantos preços tem para cada instancia.
-				int quantidadePrecos = priceString.size() / machine.size();
+			Map<String, Object> attributes = new HashMap<String, Object>();
+			Set<Entry<String, JsonElement>> entrySet = listInstancias.entrySet();
+			for (Map.Entry<String, JsonElement> entry : entrySet) {
+				attributes.put(entry.getKey(), listInstancias.get(entry.getKey()));
+			}
 
-				// indica o indice atual na lista total de preços
-				int indicePrecos = 0;
+			for (Map.Entry<String, Object> instancia : attributes.entrySet()) {
+				if (instancia.getKey().contains("PREEMPTIBLE")) {
 
-				// Percorre todas as intancias
-				for (int y = 0; y < machine.size(); y++) {
+					// -----Descrição do produto-----
+					String productDescription = instancia.getKey().toLowerCase().substring(0, 16);
+					if(instancia.getKey().contains("VMIMAGE")) {
+						productDescription = productDescription.toLowerCase() + "-vmimage"; 
+					}
+					
+					
+					// -----Tipo da instância-----
+					String instanceType = instancia.getKey().replaceAll("CP-COMPUTEENGINE-", "").replaceAll("VMIMAGE-", "").replaceAll("PREEMPTIBLE", "").replaceAll("-", " ").toLowerCase();
 
-					// percorre todos os preços da determinada instância.
-					for (int z = 0; z < quantidadePrecos; z++) {
-						spotPrices = null;
-						String regiao = googleDadosSpot.region(priceString.get(indicePrecos));
+					// Divide a string de precos em pequenas partes, cada parte contem a região e o preço
+					StringTokenizer st = new StringTokenizer(instancia.getValue().toString() + "\n\n");
 
-						spotPrices = selectSpotPrices("GOOGLE", machine.get(y), regiao, "");
+					boolean continuar;
+					do {
+						continuar = true;
+						String region = null;
+						Double preco = 0.0;
+						String linhaAtual = st.nextToken(",");
 
-						double precoConvertido = googleDadosSpot.obterPrecoConvertido(priceString.get(indicePrecos));
+						if (linhaAtual.contains("}")) {
+							continuar = false;
+						}
 
-						// Se o dado já estar no banco de dados, entra no IF
-						if (spotPrices != null) {
+						linhaAtual = linhaAtual.replaceAll("}", "");
 
-							PriceHistory priceHistory = selectPriceHistory(spotPrices);
+						String regex = "\"([^\"]*)\""; // regex com um grupo entre aspas
+						Pattern pattern = Pattern.compile(regex);
+						Matcher matcher = pattern.matcher(linhaAtual);
 
-							// Se o dado não estiver já em priceHistory, entra no IF
-							if (priceHistory == null) {
-								// Insere o dado atual na tabela de historico
-								insertPriceHistory(spotPrices);
+						if (matcher.find()) {
+							// Pega o conteúdo entre aspas a partir de uma string
+							
+							// ------- instace REGION------
+							region = matcher.group(1);
 
-								// Atualiza o dado atual do spotPrices com a nova data e preco
-								updateSpotPrices(spotPrices, precoConvertido, sdf.format(data));
-							}
-						} else {
-							// Se o dado não existir, insere ele no banco de dados
-							if (!machine.get(y).contains("Predefined") && !machine.get(y).equalsIgnoreCase("")
-									&& precoConvertido != 0) {
-								insertSpotprices("GOOGLE", machine.get(y), regiao, "", precoConvertido,
-										sdf.format(data));
+							// Verifica se o nome que ele pegou realmente é uma região
+							if (!region.contains("ssd") && !region.contains("memory") && !region.contains("cores")) {
+
+								// ------Instance PRICE-----
+								int indice = linhaAtual.indexOf(":");
+								preco = Double.parseDouble(linhaAtual.substring(indice + 1, linhaAtual.length()));
+
+								// Verifica se o preço é diferente de 0
+								if (preco != 0) {
+									
+									// --------------------ENVIO PARA O BANCO DE DADOS ----------------
+									spotPrices = null;
+									spotPrices = selectSpotPrices("GOOGLE", instanceType, region, productDescription);
+
+									// Se o dado já estar no banco de dados, entra no IF
+									if (spotPrices != null) {
+
+										PriceHistory priceHistory = selectPriceHistory(spotPrices);
+
+										// Se o dado não estiver já em priceHistory, entra no IF
+										if (priceHistory == null) {
+											// Insere o dado atual na tabela de historico
+											insertPriceHistory(spotPrices);
+
+											// Atualiza o dado atual do spotPrices com a nova data e preco
+											updateSpotPrices(spotPrices, preco, sdf.format(data));
+										}
+									} else {
+										// Se o dado não existir, insere ele no banco de dados
+
+										insertSpotprices("GOOGLE", instanceType, region, productDescription, preco, sdf.format(data));
+
+									}
+									
+									// --------------------FIM ENVIO PARA O BANCO DE DADOS ----------------
+								}
+
 							}
 
 						}
+					} while (continuar);
 
-						indicePrecos++;
-
-					}
 				}
-				// Limpa a lista de instancias.
-				machine.removeAll(machine);
 
 			}
 
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
