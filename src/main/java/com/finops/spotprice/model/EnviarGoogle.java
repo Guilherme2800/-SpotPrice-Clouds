@@ -1,12 +1,9 @@
 package com.finops.spotprice.model;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -41,7 +38,7 @@ public class EnviarGoogle {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	@Scheduled(fixedDelay = HORA)
+	// @Scheduled(fixedDelay = HORA)
 	public void enviar() {
 
 		// Pega a data atual
@@ -81,7 +78,7 @@ public class EnviarGoogle {
 					
 					
 					// -----Tipo da instância-----
-					String instanceType = instancia.getKey().replaceAll("CP-COMPUTEENGINE-", "").replaceAll("VMIMAGE-", "").replaceAll("PREEMPTIBLE", "").replaceAll("-", " ").toLowerCase();
+					String instanceType = instancia.getKey().replaceAll("CP-COMPUTEENGINE-", "").replaceAll("VMIMAGE-", "").replaceAll("-PREEMPTIBLE", "").replaceAll("-", " ").toLowerCase();
 
 					// Divide a string de precos em pequenas partes, cada parte contem a região e o preço
 					StringTokenizer st = new StringTokenizer(instancia.getValue().toString() + "\n\n");
