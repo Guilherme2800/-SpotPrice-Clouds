@@ -73,11 +73,17 @@ public class EnviarGoogle {
 			for (Map.Entry<String, Object> instancia : attributes.entrySet()) {
 				if (instancia.getKey().contains("PREEMPTIBLE")) {
 
-					// Tipo da instância
-					String instanceType = instancia.getKey().replaceAll("CP-COMPUTEENGINE-", "")
-							.replaceAll("VMIMAGE-", "").replaceAll("PREEMPTIBLE", "").replaceAll("-", " ");
+					// -----Descrição do produto-----
+					String productDescription = instancia.getKey().toLowerCase().substring(0, 16);
+					if(instancia.getKey().contains("VMIMAGE")) {
+						productDescription = productDescription.toLowerCase() + "-vmimage"; 
+					}
+					
+					
+					// -----Tipo da instância-----
+					String instanceType = instancia.getKey().replaceAll("CP-COMPUTEENGINE-", "").replaceAll("VMIMAGE-", "").replaceAll("PREEMPTIBLE", "").replaceAll("-", " ").toLowerCase();
 
-					// Divide a string em pequenas partes, cada parte contem a região e o preço
+					// Divide a string de precos em pequenas partes, cada parte contem a região e o preço
 					StringTokenizer st = new StringTokenizer(instancia.getValue().toString() + "\n\n");
 
 					boolean continuar;
@@ -99,12 +105,14 @@ public class EnviarGoogle {
 
 						if (matcher.find()) {
 							// Pega o conteúdo entre aspas a partir de uma string
+							
+							// ------- instace REGION------
 							region = matcher.group(1);
 
 							// Verifica se o nome que ele pegou realmente é uma região
 							if (!region.contains("ssd") && !region.contains("memory") && !region.contains("cores")) {
 
-								// Pega o preço da instancia
+								// ------Instance PRICE-----
 								int indice = linhaAtual.indexOf(":");
 								preco = Double.parseDouble(linhaAtual.substring(indice + 1, linhaAtual.length()));
 
@@ -113,7 +121,7 @@ public class EnviarGoogle {
 									
 									// --------------------ENVIO PARA O BANCO DE DADOS ----------------
 									spotPrices = null;
-									spotPrices = selectSpotPrices("GOOGLE", instanceType, region, "");
+									spotPrices = selectSpotPrices("GOOGLE", instanceType, region, productDescription);
 
 									// Se o dado já estar no banco de dados, entra no IF
 									if (spotPrices != null) {
@@ -131,7 +139,7 @@ public class EnviarGoogle {
 									} else {
 										// Se o dado não existir, insere ele no banco de dados
 
-										insertSpotprices("GOOGLE", instanceType, region, "", preco, sdf.format(data));
+										insertSpotprices("GOOGLE", instanceType, region, productDescription, preco, sdf.format(data));
 
 									}
 									
