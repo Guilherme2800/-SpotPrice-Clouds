@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeLeaf.org">
+<head>
+<meta charset="ISO-8859-1">
+<title>Login</title>
+<link rel="stylesheet" th:href="@{/style/login/loginStyle.css}"
+	type="text/css">
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+	rel="stylesheet">
+<link type="text/css" rel="stylesheet"
+	href="materialize/css/materialize.css" media="screen,projection" />
+<link type="text/css" rel="stylesheet"
+	href="materialize/css/materialize.min.css" media="screen,projection" />
+</head>
+<body>
+
+	<div class="formulariologin">
+		<form action="validarUsuario" method="post">
+			<p>SpotPrices</p>
+			<label>login</label> <input name="login" autocomplete="off" required="required">
+			<label>senha</label> <input type="password" name="senha" required="required"> 
+			<input class="btn waves-effect waves-light" type="submit" value="Entrar">
+		</form>
+	</div>
+
+
+	<script type="text/javascript" src="materialize/js/materialize.js"></script>
+	<script type="text/javascript" src="materialize/js/materialize.min.js"></script>
+	<script type="text/javascript" src="javaScript/bloquearTela.js"></script>
+</body>
+</html>
