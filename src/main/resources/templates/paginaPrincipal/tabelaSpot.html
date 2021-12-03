@@ -21,13 +21,13 @@
 <body>
 
    <div class="opcoes">
-        <form action="listarSpot" method="GET">
+        <form action="listarSpot" method="GET" th:object="nomesCloud">
 
-
-            <div class="input-field col s6">
-                <input id="input_text" type="text" name="cloud" autocomplete="off">
-                <label for="input_text">Cloud name</label>
-            </div>
+               <select id="cloudNames" th:field="*{cloudNames}" name="cloud">
+               <option th:each="cloud : ${cloudNames}" value="google" th:text="${cloud}"></option>
+               </select>
+               
+               
 
             <div class="input-field col s6">
                 <input id="input_text" type="text" name="region" autocomplete="off">
@@ -38,7 +38,7 @@
                 <input id="input_text" type="text" name="instanceType" autocomplete="off">
                 <label for="input_text">Instance Type</label>
             </div>
-
+            
             <input id="inputSubmit" type="submit" value="Pesquisar">
 
         </form>

@@ -31,7 +31,7 @@ public class LoginController {
 	public String validarUser(String login, String senha) {
 		user = usuarioRepository.findByloginAndSenha(login, senha);
 		if(user != null) {
-			return "paginaPrincipal/tabelaSpot";
+			return "redirect:/tabelaSpot";
 		}
 		return "login/loginUsuario";
 	}

@@ -43,4 +43,7 @@ public interface SpotRepository extends JpaRepository<SpotPrices, Long> {
 	
 	@Query(value = "select * from spotprices where cloud_name like %?% and region like %?% and instance_type like %?%", nativeQuery = true)
 	List<SpotPrices> findBycloudNameAndRegionAndInstanceType(String cloudName, String region, String instanceType);
+	
+	@Query(value = "SELECT DISTINCT (cloud_name) FROM spotprices", nativeQuery = true)
+	List<String> findBycloudNameSelect();
 }
