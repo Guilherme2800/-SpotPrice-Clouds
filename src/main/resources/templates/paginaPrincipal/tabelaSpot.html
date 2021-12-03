@@ -54,16 +54,16 @@
             <thead>
                 <tr>
                     <th>Cloud</th>
-                    <th>Instance Type</th>
                     <th>Region</th>
+                    <th>Instance Type</th>
                     <th>Price</th>
                 </tr>
             </thead>
             <tbody>
                 <tr th:each="spot : ${spots}">
                     <td th:text=${spot.cloudName}></td>
-                    <td th:text=${spot.instanceType}></td>
                     <td th:text=${spot.region}></td>
+                    <td th:text=${spot.instanceType}></td>
                     <td th:text=${spot.price}></td>
                 </tr>
             </tbody>
