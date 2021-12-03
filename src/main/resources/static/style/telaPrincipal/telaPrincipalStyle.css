@@ -1,0 +1,154 @@
+@charset "ISO-8859-1";
+
+html {
+	marge:0px;
+	padding: 0px;
+	border: 0px;
+}
+
+form *{
+	position: flex;
+	display: inline-block;
+}
+
+form {
+	margin-left: auto;
+    margin-right: auto; 
+    max-height: 15vh;
+}
+
+#inputSubmit{
+	margin-top: 10px;
+    padding: 10px;   
+    background-color: rgb(216, 150, 27);
+    color: white;
+    border-radius: 5px;
+}
+
+table {
+	table-layout: fixed;
+}
+
+tr:nth-child(even) {
+  background:lightgray;
+}
+
+th {
+	position: sticky;
+	top: 0;
+	background-color: #23a49c;
+}
+
+div.tabelaSpot {
+	width: 100vw;
+	height: 80vh;
+	display: block;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	overflow-x: auto;
+    white-space: nowrap; 
+}
+
+div.opcoes {
+	display: flex;
+}
+
+<!-- FOOTER -->
+
+.site-footer{
+	max-height: 8.2vh; 
+}
+
+.site-footer * {
+	position: flex;
+	display:inline;
+}
+
+.site-footer a
+{
+  color:#737373;
+}
+
+.site-footer .copyright{
+	vertical-align: middle;
+	margin-left: 5px;
+}
+
+.site-footer .social-icons
+{
+  text-align:right
+}
+
+.site-footer .social-icons a
+{
+  width:40px;
+  height:40px;
+  border-radius:100%;
+  background-color:#33353d
+}
+
+.copyright-text
+{
+  margin:0;
+}
+
+.social-icons
+{
+  padding-left:0;
+  margin-bottom:0;
+  list-style:none
+}
+
+.social-icons li
+{
+  display:inline-block;
+  float: right;
+  margin-top: 5px;
+  margin-right: 3px;
+}
+
+.social-icons a{
+  background-color:#eceeef;
+  color:#818a91;
+  font-size:16px;
+  display:flex;
+  line-height:44px;
+  text-align:center;
+  margin-right:8px;
+  border-radius:100%;
+  -webkit-transition:all .2s linear;
+  -o-transition:all .2s linear;
+  transition:all .2s linear
+}
+
+.social-icons a:active,.social-icons a:focus,.social-icons a:hover
+{
+  color:#fff;
+  background-color:#29aafe
+}
+
+.social-icons.size-sm a
+{
+  line-height:34px;
+  height:34px;
+  width:34px;
+  font-size:14px
+}
+
+.social-icons a.facebook:hover
+{
+  background-color:#3b5998
+}
+
+.social-icons a.linkedin:hover
+{
+  background-color:#007bb6
+}
+
+.social-icons a.instagram:hover
+{
+  background-color:#ea4c89
+}
+
+

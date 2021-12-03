@@ -1,6 +1,11 @@
 package com.finops.spotprice.model;
 
-
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -72,13 +77,14 @@ public class EnviarGoogle {
 
 					// -----Descrição do produto-----
 					String productDescription = instancia.getKey().toLowerCase().substring(0, 16);
-					if(instancia.getKey().contains("VMIMAGE")) {
-						productDescription = productDescription.toLowerCase() + "-vmimage"; 
+					if (instancia.getKey().contains("VMIMAGE")) {
+						productDescription = productDescription.toLowerCase() + "-vmimage";
 					}
-					
-					
+
 					// -----Tipo da instância-----
-					String instanceType = instancia.getKey().replaceAll("CP-COMPUTEENGINE-", "").replaceAll("VMIMAGE-", "").replaceAll("-PREEMPTIBLE", "").replaceAll("-", " ").toLowerCase();
+					String instanceType = instancia.getKey().replaceAll("CP-COMPUTEENGINE-", "")
+							.replaceAll("VMIMAGE-", "").replaceAll("-PREEMPTIBLE", "").replaceAll("-", " ")
+							.toLowerCase();
 
 					// Divide a string de precos em pequenas partes, cada parte contem a região e o preço
 					StringTokenizer st = new StringTokenizer(instancia.getValue().toString() + "\n\n");
@@ -87,7 +93,7 @@ public class EnviarGoogle {
 					do {
 						continuar = true;
 						String region = null;
-						Double preco = 0.0;
+						BigDecimal preco;
 						String linhaAtual = st.nextToken(",");
 
 						if (linhaAtual.contains("}")) {
@@ -102,7 +108,7 @@ public class EnviarGoogle {
 
 						if (matcher.find()) {
 							// Pega o conteúdo entre aspas a partir de uma string
-							
+
 							// ------- instace REGION------
 							region = matcher.group(1);
 
@@ -111,11 +117,21 @@ public class EnviarGoogle {
 
 								// ------Instance PRICE-----
 								int indice = linhaAtual.indexOf(":");
-								preco = Double.parseDouble(linhaAtual.substring(indice + 1, linhaAtual.length()));
+
+								String precoFormatado = linhaAtual.substring(indice + 1, linhaAtual.length());
+
+								if (precoFormatado.length() >= 7) {
+									precoFormatado = precoFormatado.substring(0, 7);
+								}
+
+								preco = new BigDecimal(Double.parseDouble(precoFormatado)).setScale(7,BigDecimal.ROUND_HALF_UP);
+								// ------ FIM Instance PRICE-----
+
+								BigDecimal valorZerado = new BigDecimal("0.000000");
 
 								// Verifica se o preço é diferente de 0
-								if (preco != 0) {
-									
+								if ((preco.compareTo(valorZerado)) != 0) {
+
 									// --------------------ENVIO PARA O BANCO DE DADOS ----------------
 									spotPrices = null;
 									spotPrices = selectSpotPrices("GOOGLE", instanceType, region, productDescription);
@@ -136,10 +152,11 @@ public class EnviarGoogle {
 									} else {
 										// Se o dado não existir, insere ele no banco de dados
 
-										insertSpotprices("GOOGLE", instanceType, region, productDescription, preco, sdf.format(data));
+										insertSpotprices("GOOGLE", instanceType, region, productDescription, preco,
+												sdf.format(data));
 
 									}
-									
+
 									// --------------------FIM ENVIO PARA O BANCO DE DADOS ----------------
 								}
 
@@ -170,7 +187,7 @@ public class EnviarGoogle {
 	protected PriceHistory selectPriceHistory(SpotPrices spotPrices) {
 
 		return priceHistoryRepository.findBySelectUsingcodSpotAndpriceAnddataReq(spotPrices.getCod_spot(),
-				spotPrices.getPrice(), spotPrices.getDataReq());
+				spotPrices.getPrice().doubleValue(), spotPrices.getDataReq());
 
 	}
 
@@ -179,13 +196,13 @@ public class EnviarGoogle {
 		PriceHistory priceHistory = new PriceHistory();
 
 		priceHistory.setCodSpot(spotPrices.getCod_spot());
-		priceHistory.setPrice(spotPrices.getPrice());
+		priceHistory.setPrice(spotPrices.getPrice().doubleValue());
 		priceHistory.setDataReq(spotPrices.getDataReq());
 
 		priceHistoryRepository.save(priceHistory);
 	}
 
-	protected void updateSpotPrices(SpotPrices spotPrices, double unitPrice, String dataSpotFormatada) {
+	protected void updateSpotPrices(SpotPrices spotPrices, BigDecimal unitPrice, String dataSpotFormatada) {
 		spotPrices.setPrice(unitPrice);
 		spotPrices.setDataReq(dataSpotFormatada);
 
@@ -193,7 +210,7 @@ public class EnviarGoogle {
 	}
 
 	protected void insertSpotprices(String cloudName, String instanceType, String region, String productDescription,
-			double unitPrice, String dataSpotFormatada) {
+			BigDecimal unitPrice, String dataSpotFormatada) {
 
 		SpotPrices newSpotPrice = new SpotPrices();
 		newSpotPrice.setCloudName("GOOGLE");

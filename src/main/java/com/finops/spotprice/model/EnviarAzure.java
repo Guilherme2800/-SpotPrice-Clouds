@@ -1,5 +1,6 @@
 package com.finops.spotprice.model;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -67,12 +68,19 @@ public class EnviarAzure {
 					// Se o dado já estar no banco de dados, entra no IF
 					if (spotPrices != null) {
 						
+						PriceHistory priceHistory = selectPriceHistory(spotPrices);
+
+						// Se o dado não estiver já em priceHistory, entra no IF
+						if (priceHistory == null) {
+						
 						// Insere o dado atual na tabela de historico
 						insertPricehistory(spotPrices);
 						
 						// Atualiza o dado atual do spotPrices com a nova data e preco
 						updateSpotPrices(spotAzure, spotPrices, dataSpotFormatada);
-
+						
+						}
+						
 					} else {
 						// Se o dado não existir, insere ele no banco de dados
 						insertSpotPrices(spotAzure, dataSpotFormatada);
@@ -112,13 +120,20 @@ public class EnviarAzure {
 				spotAzure.getLocation(), spotAzure.getProductName());
 
 	}
+	
+	protected PriceHistory selectPriceHistory(SpotPrices spotPrices) {
+
+		return priceHistoryRepository.findBySelectUsingcodSpotAndpriceAnddataReq(spotPrices.getCod_spot(),
+				spotPrices.getPrice().doubleValue(), spotPrices.getDataReq());
+
+	}
 
 	protected void insertPricehistory(SpotPrices spotPrices) {
 
 		PriceHistory priceHistory = new PriceHistory();
 
 		priceHistory.setCodSpot(spotPrices.getCod_spot());
-		priceHistory.setPrice(spotPrices.getPrice());
+		priceHistory.setPrice(spotPrices.getPrice().doubleValue());
 		priceHistory.setDataReq(spotPrices.getDataReq());
 
 		priceHistoryRepository.save(priceHistory);
@@ -127,7 +142,9 @@ public class EnviarAzure {
 
 	protected void updateSpotPrices(SpotAzure spotAzure, SpotPrices spotPrices, String dataSpotFormatada) {
 
-		spotPrices.setPrice(spotAzure.getUnitPrice());
+		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5,BigDecimal.ROUND_HALF_UP);
+		
+		spotPrices.setPrice(preco);
 		spotPrices.setDataReq(dataSpotFormatada);
 
 		spotRepository.save(spotPrices);
@@ -135,13 +152,15 @@ public class EnviarAzure {
 	}
 
 	protected void insertSpotPrices(SpotAzure spotAzure, String dataSpotFormatada) {
+		
+		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5,BigDecimal.ROUND_HALF_UP);
 
 		SpotPrices newSpotPrice = new SpotPrices();
 		newSpotPrice.setCloudName("AZURE");
 		newSpotPrice.setInstanceType(spotAzure.getSkuName().replaceAll(" Spot", ""));
 		newSpotPrice.setRegion(spotAzure.getLocation());
 		newSpotPrice.setProductDescription(spotAzure.getProductName());
-		newSpotPrice.setPrice(spotAzure.getUnitPrice());
+		newSpotPrice.setPrice(preco);
 		newSpotPrice.setDataReq(dataSpotFormatada);
 
 		spotRepository.save(newSpotPrice);

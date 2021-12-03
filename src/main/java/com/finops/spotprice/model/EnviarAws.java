@@ -1,5 +1,6 @@
 package com.finops.spotprice.model;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -147,7 +148,7 @@ public class EnviarAws {
 	protected PriceHistory selectPriceHistory(SpotPrices spotPrices) {
 
 		return priceHistoryRepository.findBySelectUsingcodSpotAndpriceAnddataReq(spotPrices.getCod_spot(),
-				spotPrices.getPrice(), spotPrices.getDataReq());
+				spotPrices.getPrice().doubleValue(), spotPrices.getDataReq());
 
 	}
 
@@ -156,7 +157,7 @@ public class EnviarAws {
 		PriceHistory priceHistory = new PriceHistory();
 
 		priceHistory.setCodSpot(spotPrices.getCod_spot());
-		priceHistory.setPrice(spotPrices.getPrice());
+		priceHistory.setPrice(spotPrices.getPrice().doubleValue());
 		priceHistory.setDataReq(spotPrices.getDataReq());
 
 		priceHistoryRepository.save(priceHistory);
@@ -165,7 +166,9 @@ public class EnviarAws {
 
 	protected void updateSpotPrices(SpotPrice spotAws, SpotPrices spotPrices, String dataSpotFormatada) {
 
-		spotPrices.setPrice(Double.valueOf(spotAws.getSpotPrice()).doubleValue());
+		BigDecimal preco = new BigDecimal(Double.parseDouble(spotAws.getSpotPrice())).setScale(5,BigDecimal.ROUND_HALF_UP);
+		
+		spotPrices.setPrice(preco);
 		spotPrices.setDataReq(dataSpotFormatada);
 
 		spotRepository.save(spotPrices);
@@ -174,12 +177,14 @@ public class EnviarAws {
 
 	protected void insertSpotPrices(SpotPrice spotAws, String dataSpotFormatada, String regiao) {
 
+		BigDecimal preco = new BigDecimal(Double.parseDouble(spotAws.getSpotPrice())).setScale(5,BigDecimal.ROUND_HALF_UP);
+		
 		SpotPrices newSpotPrice = new SpotPrices();
 		newSpotPrice.setCloudName("AWS");
 		newSpotPrice.setInstanceType(spotAws.getInstanceType());
 		newSpotPrice.setRegion(regiao);
 		newSpotPrice.setProductDescription(spotAws.getProductDescription());
-		newSpotPrice.setPrice(Double.valueOf(spotAws.getSpotPrice()).doubleValue());
+		newSpotPrice.setPrice(preco);
 		newSpotPrice.setDataReq(dataSpotFormatada);
 
 		spotRepository.save(newSpotPrice);
