@@ -1,5 +1,7 @@
 package com.finops.spotprice.model;
 
+import java.math.BigDecimal;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -29,7 +31,7 @@ public class SpotPrices {
 	@Column(name = "product_description")
 	private String productDescription;
 	
-	private double price;
+	private BigDecimal price;
 	
 	@Column(name = "data_req")
 	private String dataReq;
