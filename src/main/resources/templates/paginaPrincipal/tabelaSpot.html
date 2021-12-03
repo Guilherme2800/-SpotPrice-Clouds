@@ -1,12 +1,100 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeLeaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link type="text/css" rel="stylesheet" href="materialize/css/materialize.css" media="screen,projection" />
+    <link type="text/css" rel="stylesheet" href="materialize/css/materialize.min.css" media="screen,projection" />
+
+    <link rel="stylesheet" th:href="@{/style/telaPrincipal/telaPrincipalStyle.css}" type="text/css">
+    
+    <link rel = "shortcut icon" type = "imagem/png" href = "/img/favicons.png"/>
+   
+    
+    <title>Tabela de Preços SPOT</title>
 </head>
+
 <body>
-    Tabela fica aqui
+
+   <div class="opcoes">
+        <form action="listarSpot" method="GET">
+
+
+            <div class="input-field col s6">
+                <input id="input_text" type="text" name="cloud">
+                <label for="input_text">Cloud name</label>
+            </div>
+
+            <div class="input-field col s6">
+                <input id="input_text" type="text" name="region">
+                <label for="input_text">Region</label>
+            </div>
+            
+            <div class="input-field col s6">
+                <input id="input_text" type="text" name="instanceType">
+                <label for="input_text">Instance Type</label>
+            </div>
+
+            <input id="inputSubmit" type="submit" value="Pesquisar">
+
+        </form>
+   
+   
+   </div>
+        
+        
+        
+
+    <div class="tabelaSpot">
+        <table class="centered">
+            <thead>
+                <tr>
+                    <th>Cloud</th>
+                    <th>Instance Type</th>
+                    <th>Region</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="spot : ${spots}">
+                    <td th:text=${spot.cloudName}></td>
+                    <td th:text=${spot.instanceType}></td>
+                    <td th:text=${spot.region}></td>
+                    <td th:text=${spot.price}></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    
+          <footer class="site-footer">
+      
+   
+
+          <div class="copyright">
+            <p class="copyright-text">Copyright &copy; 2021 All Rights Reserved by 
+         <a href="http://ustore.com.br/" target="_blank">Ustore</a>.
+            </p>
+          </div>
+
+          <div class="social">
+            <ul class="social-icons">
+              <li><a class="facebook" href="https://www.facebook.com/ustorecloudstorage" target="_blank"><img alt="" src="/img/facebook.png"></a></li>
+              <li><a class="instagram" href="https://www.instagram.com/ustorecloud/" target="_blank"><img alt="" src="/img/instagram.png"></a></li>
+              <li><a class="linkedin" href="https://www.linkedin.com/company/ustore/" target="_blank"><img alt="" src="/img/linkedin.png"></a></li>   
+            </ul>
+          
+    
+      </div>
+</footer>
+            
+
+    <script type="text/javascript" src="materialize/js/materialize.js"></script>
+    <script type="text/javascript" src="materialize/js/materialize.min.js"></script>
 </body>
+
 </html>

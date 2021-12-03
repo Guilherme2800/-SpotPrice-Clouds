@@ -30,4 +30,17 @@ public interface SpotRepository extends JpaRepository<SpotPrices, Long> {
 	Page<SpotPrices> findBycloudNameAndInstanceType(String cloudName, String instanceType, Pageable pageable);
 	
 	Page<SpotPrices> findBycloudNameAndRegionAndInstanceType(String cloudName, String region, String instanceType, Pageable pageable);
+	
+	// Thymeleaf 
+	List<SpotPrices> findBycloudName(String cloudName);
+	
+	List<SpotPrices> findByregion(String region);
+
+	List<SpotPrices> findByinstanceType(String instanceType);
+	
+	List<SpotPrices> findBycloudNameAndRegion(String cloudName, String region);
+	
+	List<SpotPrices> findBycloudNameAndInstanceType(String cloudName, String instanceType);
+	
+	List<SpotPrices> findBycloudNameAndRegionAndInstanceType(String cloudName, String region, String instanceType);
 }
