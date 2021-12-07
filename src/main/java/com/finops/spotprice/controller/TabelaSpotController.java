@@ -44,11 +44,25 @@ public class TabelaSpotController {
 			return modelView;
 		}
 		
+		if (region.length() != 0) {
+			Iterable<SpotPrices> spotIt = spotRepository.findByregion(region);
+			modelView.addObject("spots", spotIt);
+			return modelView;
+		}
+		
+		if (instanceType.length() != 0) {
+			Iterable<SpotPrices> spotIt = spotRepository.findByinstanceType(instanceType);
+			modelView.addObject("spots", spotIt);
+			return modelView;
+		}
+		
 		if (cloud.length() != 0) {
 			Iterable<SpotPrices> spotIt = spotRepository.findBycloudName(cloud);
 			modelView.addObject("spots", spotIt);
 			return modelView;
 		}
+		
+		
 
 		return modelView;
 	}

@@ -64,7 +64,7 @@
                     <td th:text=${spot.cloudName}></td>
                     <td th:text=${spot.region}></td>
                     <td th:text=${spot.instanceType}></td>
-                    <td th:text=${spot.price}></td>
+                    <td th:text="${'USD '+ spot.price}"></td>
                 </tr>
             </tbody>
         </table>

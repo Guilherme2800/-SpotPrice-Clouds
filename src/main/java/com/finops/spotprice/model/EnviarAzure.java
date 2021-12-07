@@ -23,6 +23,8 @@ public class EnviarAzure {
 	private final long SEGUNDO = 1000;
 	private final long MINUTO = SEGUNDO * 60;
 	private final long HORA = MINUTO * 60;
+	private final long DIA = HORA * 24;
+	private final long SEMANA = DIA * 7;
 
 	// Pega o dia atual
 	Date data = new Date(System.currentTimeMillis());
@@ -38,7 +40,7 @@ public class EnviarAzure {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	// @Scheduled(fixedDelay = HORA)
+	// @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
 
 		SpotPrices spotPrices;
@@ -46,7 +48,7 @@ public class EnviarAzure {
 		// Recebe o json convertido
 		SpotAzureArray azureSpot = solicitarObjetoAzure(URL);
 
-		System.out.println("\nEnviando para o banco de dados");
+		System.out.println("\nEnviando Azure para o banco de dados");
 
 		boolean proximo = true;
 
@@ -95,13 +97,15 @@ public class EnviarAzure {
 			if (azureSpot.getCount() < 100) {
 				proximo = false;
 			} else if (azureSpot.getNextPageLink() != null) {
-				System.out.println(azureSpot.getNextPageLink());
+				
 				azureSpot = solicitarObjetoAzure(azureSpot.getNextPageLink());
 			} else {
 				proximo = false;
 			}
 		}
-
+		
+		System.out.println("Azure enviada.");
+		
 	}
 
 	protected SpotAzureArray solicitarObjetoAzure(String URL) {
