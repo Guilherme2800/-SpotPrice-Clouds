@@ -45,7 +45,7 @@ public class EnviarGoogle {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	 @Scheduled(fixedDelay = SEMANA)
+	// @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
 
 		// Pega a data atual
