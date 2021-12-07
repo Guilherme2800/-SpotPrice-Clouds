@@ -34,7 +34,12 @@ public class SpotControllerAPI {
 		return repository.findBycloudName(cloudName, pageable);
 	}
 	
-	@GetMapping("/listar/tipoInstancia/{tipoInstancia}")
+	@GetMapping("/listar/region/{region}")
+	public Page<SpotPrices> listarRegion(@PathVariable String region, Pageable pageable){
+		return repository.findByregion(region, pageable);
+	}
+	
+	@GetMapping("/listar/instanceType/{tipoInstancia}")
 	public Page<SpotPrices> listarTipoInstancia(@PathVariable String tipoInstancia, Pageable pageable){
 		return repository.findByinstanceType(tipoInstancia, pageable);
 	}
