@@ -35,6 +35,12 @@ public interface SpotRepository extends JpaRepository<SpotPrices, Long> {
 	@Query(value = "select * from spotprices where cloud_name like %?% ", nativeQuery = true)
 	List<SpotPrices> findBycloudName(String cloudName);
 	
+	@Query(value = "select * from spotprices where region like %?% ", nativeQuery = true)
+	List<SpotPrices> findByregion(String region);
+	
+	@Query(value = "select * from spotprices where instance_type like %?% ", nativeQuery = true)
+	List<SpotPrices> findByinstanceType(String instanceType);
+	
 	@Query(value = "select * from spotprices where cloud_name like %?% and region like %?%", nativeQuery = true)
 	List<SpotPrices> findBycloudNameAndRegion(String cloudName, String region);
 	
@@ -43,4 +49,5 @@ public interface SpotRepository extends JpaRepository<SpotPrices, Long> {
 	
 	@Query(value = "select * from spotprices where cloud_name like %?% and region like %?% and instance_type like %?%", nativeQuery = true)
 	List<SpotPrices> findBycloudNameAndRegionAndInstanceType(String cloudName, String region, String instanceType);
+	
 }

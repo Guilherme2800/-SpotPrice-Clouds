@@ -34,6 +34,7 @@ public class EnviarAws {
 	private final long SEGUNDO = 1000;
 	private final long MINUTO = SEGUNDO * 60;
 	private final long HORA = MINUTO * 60;
+	private final long DIA = HORA * 24;
 
 	@Autowired
 	private SpotRepository spotRepository;
@@ -41,7 +42,7 @@ public class EnviarAws {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	// @Scheduled(fixedDelay = HORA)
+	// @Scheduled(fixedDelay = DIA)
 	public void correrRegioes() {
 
 		BasicAWSCredentials awsCredenciais = new BasicAWSCredentials("AKIA6KDLKFZSQL3QS5AX",
@@ -68,7 +69,7 @@ public class EnviarAws {
 		
 		SpotPrices spotPrices;
 
-		// Instancia o cliente AWS
+		// Instancia o cliente AWS na região especificada
 		AmazonEC2 client = AmazonEC2ClientBuilder.standard().withRegion(regiao).build();
 		DescribeSpotPriceHistoryRequest request;
 
@@ -107,18 +108,17 @@ public class EnviarAws {
 						// Se o dado não estiver já em priceHistory, entra no IF
 						if (priceHistory == null) {
 
-							// Insere o dado atual na tabela de historico
+							// Insere o dado atual na tabela pricehistory
 							insertPricehistory(spotPrices);
 
-							// Atualiza o dado atual com a nova data e preco
+							// Atualiza o dado atual na tabela SpotPrices com a nova data e preco 
 							updateSpotPrices(spotAws, spotPrices, dataSpotFormadata);
 
 						}
 
 					} else {
-						// Se o dado não existir, insere ele no banco de dados
+						// Se o dado não existir, insere ele no banco de dados na tabela spotPrices
 						insertSpotPrices(spotAws, dataSpotFormadata, regiao);
-
 					}
 
 				}

@@ -34,6 +34,8 @@ public class EnviarGoogle {
 	private final long SEGUNDO = 1000;
 	private final long MINUTO = SEGUNDO * 60;
 	private final long HORA = MINUTO * 60;
+	private final long DIA = HORA * 24;
+	private final long SEMANA = DIA * 7;
 
 	final String URL = "https://cloudpricingcalculator.appspot.com/static/data/pricelist.json?v=1638364907294";
 
@@ -43,7 +45,7 @@ public class EnviarGoogle {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	// @Scheduled(fixedDelay = HORA)
+	// @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
 
 		// Pega a data atual
@@ -66,12 +68,14 @@ public class EnviarGoogle {
 			// Pega o objeto JSON que contém as instancias
 			JsonObject listInstancias = (JsonObject) jsonObject.get("gcp_price_list");
 
+			//Realiza o mapeamento chave valor dos tipos de instâncias para seus valores em todas regiões
 			Map<String, Object> attributes = new HashMap<String, Object>();
 			Set<Entry<String, JsonElement>> entrySet = listInstancias.entrySet();
 			for (Map.Entry<String, JsonElement> entry : entrySet) {
 				attributes.put(entry.getKey(), listInstancias.get(entry.getKey()));
 			}
 
+			// Percorre as posições chave/valor
 			for (Map.Entry<String, Object> instancia : attributes.entrySet()) {
 				if (instancia.getKey().contains("PREEMPTIBLE")) {
 
