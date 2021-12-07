@@ -8,9 +8,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.finops.spotprice.model.SpotPrices;
-import com.finops.spotprice.model.Usuario;
 import com.finops.spotprice.repository.SpotRepository;
-import com.finops.spotprice.repository.UsuarioRepository;
 
 @Controller
 public class TabelaSpotController {

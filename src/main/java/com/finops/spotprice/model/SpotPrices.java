@@ -20,13 +20,13 @@ public class SpotPrices {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	Long cod_spot;
 	
-	private String region;
-	
 	@Column(name = "cloud_name")
 	private String cloudName;
 	
 	@Column(name = "instance_type")
 	private String instanceType;
+	
+	private String region;
 	
 	@Column(name = "product_description")
 	private String productDescription;
