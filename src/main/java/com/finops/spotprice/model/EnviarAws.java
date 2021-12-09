@@ -42,7 +42,7 @@ public class EnviarAws {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	// @Scheduled(fixedDelay = DIA)
+	 @Scheduled(fixedDelay = DIA)
 	public void correrRegioes() {
 
 		BasicAWSCredentials awsCredenciais = new BasicAWSCredentials("AKIA6KDLKFZSQL3QS5AX",

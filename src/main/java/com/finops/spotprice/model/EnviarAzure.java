@@ -40,7 +40,7 @@ public class EnviarAzure {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	// @Scheduled(fixedDelay = SEMANA)
+    @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
 
 		SpotPrices spotPrices;
@@ -84,6 +84,7 @@ public class EnviarAzure {
 						}
 						
 					} else {
+						
 						// Se o dado não existir, insere ele no banco de dados
 						insertSpotPrices(spotAzure, dataSpotFormatada);
 
@@ -120,7 +121,7 @@ public class EnviarAzure {
 
 	protected SpotPrices selectSpotPrices(SpotAzure spotAzure) {
 
-		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",spotAzure.getSkuName(),
+		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",spotAzure.getSkuName().replaceAll(" Spot", ""),
 				spotAzure.getLocation(), spotAzure.getProductName());
 
 	}

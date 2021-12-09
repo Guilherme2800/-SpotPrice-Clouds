@@ -9,5 +9,5 @@ public class SpotpriceApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(SpotpriceApplication.class, args);
 	}
-
+	
 }
