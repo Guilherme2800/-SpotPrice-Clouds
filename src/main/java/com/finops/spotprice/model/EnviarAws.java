@@ -45,11 +45,7 @@ public class EnviarAws {
 	 @Scheduled(fixedDelay = DIA)
 	public void correrRegioes() {
 
-		BasicAWSCredentials awsCredenciais = new BasicAWSCredentials("AKIA6KDLKFZSQL3QS5AX",
-				"jG0NuRpfXS/1gRzPAgk0KDIDSsmH7rRjEMY7bFKl");
-
-		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard()
-				.withCredentials(new AWSStaticCredentialsProvider(awsCredenciais)).build();
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
 		DescribeRegionsResult regions_response = ec2.describeRegions();
 
 		System.out.println("Iniciando Envio da AWS...");
