@@ -24,14 +24,14 @@ import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryRequest;
 import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryResult;
 import com.amazonaws.services.ec2.model.Region;
 import com.amazonaws.services.ec2.model.SpotPrice;
-import com.finops.spotprice.persistence.entity.PriceHistory;
+import com.finops.spotprice.persistence.entity.PriceHistorySpot;
 import com.finops.spotprice.persistence.entity.SpotPrices;
 import com.finops.spotprice.persistence.repository.PriceHistoryRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
 
 @Component
 @EnableScheduling
-public class EnviarAws {
+public class EnviarAwsSpot {
 
 	private final long SEGUNDO = 1000;
 	private final long MINUTO = SEGUNDO * 60;
@@ -101,7 +101,7 @@ public class EnviarAws {
 					// Se o dado já estar no banco de dados, entra no IF
 					if (spotPrices != null) {
 
-						PriceHistory priceHistory = selectPriceHistory(spotPrices);
+						PriceHistorySpot priceHistory = selectPriceHistory(spotPrices);
 
 						// Se o dado não estiver já em priceHistory, entra no IF
 						if (priceHistory == null) {
@@ -143,7 +143,7 @@ public class EnviarAws {
 
 	}
 
-	protected PriceHistory selectPriceHistory(SpotPrices spotPrices) {
+	protected PriceHistorySpot selectPriceHistory(SpotPrices spotPrices) {
 
 		return priceHistoryRepository.findBySelectUsingcodSpotAndpriceAnddataReq(spotPrices.getCod_spot(),
 				spotPrices.getPrice().doubleValue(), spotPrices.getDataReq());
@@ -152,7 +152,7 @@ public class EnviarAws {
 
 	protected void insertPricehistory(SpotPrices spotPrices) {
 
-		PriceHistory priceHistory = new PriceHistory();
+		PriceHistorySpot priceHistory = new PriceHistorySpot();
 
 		priceHistory.setCodSpot(spotPrices.getCod_spot());
 		priceHistory.setPrice(spotPrices.getPrice().doubleValue());
