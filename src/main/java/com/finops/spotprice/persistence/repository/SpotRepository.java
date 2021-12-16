@@ -1,4 +1,4 @@
-package com.finops.spotprice.repository;
+package com.finops.spotprice.persistence.repository;
 
 import java.util.List;
 
@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.finops.spotprice.model.SpotPrices;
+import com.finops.spotprice.persistence.entity.SpotPrices;
 
 @Repository
 public interface SpotRepository extends JpaRepository<SpotPrices, Long> {

@@ -1,10 +1,10 @@
-package com.finops.spotprice.repository;
+package com.finops.spotprice.persistence.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.finops.spotprice.model.PriceHistory;
+import com.finops.spotprice.persistence.entity.PriceHistory;
 
 @Repository
 public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long>{
