@@ -11,9 +11,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.finops.spotprice.model.azurecloud.*;
-import com.finops.spotprice.repository.PriceHistoryRepository;
-import com.finops.spotprice.repository.SpotRepository;
+import com.finops.spotprice.persistence.entity.PriceHistory;
+import com.finops.spotprice.persistence.entity.SpotPrices;
+import com.finops.spotprice.persistence.repository.PriceHistoryRepository;
+import com.finops.spotprice.persistence.repository.SpotRepository;
 import com.finops.spotprice.service.JsonForObjectAzure;
 
 @Component
@@ -40,7 +41,7 @@ public class EnviarAzure {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-    @Scheduled(fixedDelay = SEMANA)
+    // @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
 
 		SpotPrices spotPrices;

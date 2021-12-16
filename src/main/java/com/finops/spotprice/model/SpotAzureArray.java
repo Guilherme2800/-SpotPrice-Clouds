@@ -1,4 +1,4 @@
-package com.finops.spotprice.model.azurecloud;
+package com.finops.spotprice.model;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -21,8 +21,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.finops.spotprice.repository.PriceHistoryRepository;
-import com.finops.spotprice.repository.SpotRepository;
+import com.finops.spotprice.persistence.entity.PriceHistory;
+import com.finops.spotprice.persistence.entity.SpotPrices;
+import com.finops.spotprice.persistence.repository.PriceHistoryRepository;
+import com.finops.spotprice.persistence.repository.SpotRepository;
 import com.finops.spotprice.service.ReceberJson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -45,7 +47,7 @@ public class EnviarGoogle {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	@Scheduled(fixedDelay = SEMANA)
+	// @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
 
 		// Pega a data atual

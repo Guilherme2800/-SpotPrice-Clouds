@@ -24,8 +24,10 @@ import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryRequest;
 import com.amazonaws.services.ec2.model.DescribeSpotPriceHistoryResult;
 import com.amazonaws.services.ec2.model.Region;
 import com.amazonaws.services.ec2.model.SpotPrice;
-import com.finops.spotprice.repository.PriceHistoryRepository;
-import com.finops.spotprice.repository.SpotRepository;
+import com.finops.spotprice.persistence.entity.PriceHistory;
+import com.finops.spotprice.persistence.entity.SpotPrices;
+import com.finops.spotprice.persistence.repository.PriceHistoryRepository;
+import com.finops.spotprice.persistence.repository.SpotRepository;
 
 @Component
 @EnableScheduling
@@ -42,7 +44,7 @@ public class EnviarAws {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	 @Scheduled(fixedDelay = DIA)
+	// @Scheduled(fixedDelay = DIA)
 	public void correrRegioes() {
 
 		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();

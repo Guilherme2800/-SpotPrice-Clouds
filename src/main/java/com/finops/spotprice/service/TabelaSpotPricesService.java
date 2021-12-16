@@ -1,26 +1,22 @@
-package com.finops.spotprice.controller;
+package com.finops.spotprice.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.finops.spotprice.model.SpotPrices;
-import com.finops.spotprice.repository.SpotRepository;
+import com.finops.spotprice.persistence.entity.SpotPrices;
+import com.finops.spotprice.persistence.repository.SpotRepository;
 
-@Controller
-public class TabelaSpotController {
+@Service
+public class TabelaSpotPricesService {
 
 	@Autowired
 	SpotRepository spotRepository;
 
-	@GetMapping("/")
-	public String telaLogin() {
-		return "paginaPrincipal/tabelaSpot";
-	}
-	
 	@RequestMapping(method = RequestMethod.GET, value = "/listarSpot")
 	public ModelAndView listarIndividuos(String cloud, String region, String instanceType) {
 		ModelAndView modelView = new ModelAndView("paginaPrincipal/tabelaSpot");
