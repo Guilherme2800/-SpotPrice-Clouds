@@ -56,7 +56,8 @@
                     <th>Cloud</th>
                     <th>Region</th>
                     <th>Instance Type</th>
-                    <th>Price</th>
+                    <th>Price Spot</th>
+                    <th>Price Sob demanda</th>
                     <th>Data Requisição</th>
                 </tr>
             </thead>
@@ -65,7 +66,8 @@
                     <td th:text=${spot.cloudName}></td>
                     <td th:text=${spot.region}></td>
                     <td th:text=${spot.instanceType}></td>
-                    <td th:text="${'USD '+ spot.price}"></td>
+                    <td th:text="${'USD '+ spot.priceSpot}"></td>
+                    <td th:text="${'USD '+ spot.priceNormal}"></td>
                     <td th:text=${spot.dataReq}></td>
                 </tr>
             </tbody>

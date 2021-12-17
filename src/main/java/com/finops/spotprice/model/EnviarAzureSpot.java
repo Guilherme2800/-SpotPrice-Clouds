@@ -41,7 +41,7 @@ public class EnviarAzureSpot {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-     @Scheduled(fixedDelay = SEMANA)
+    // @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
 
 		SpotPrices spotPrices;
