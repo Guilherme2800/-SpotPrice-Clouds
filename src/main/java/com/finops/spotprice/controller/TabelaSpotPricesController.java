@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.finops.spotprice.model.EstruturaTabela;
 import com.finops.spotprice.persistence.entity.SpotPrices;
 import com.finops.spotprice.service.TabelaSpotPricesService;
 
@@ -25,7 +26,7 @@ public class TabelaSpotPricesController {
 	@RequestMapping(method = RequestMethod.GET, value = "/listarSpot")
 	public ModelAndView listar(String cloud, String region, String instanceType) {
 		ModelAndView mdv = new ModelAndView("paginaPrincipal/tabelaSpot");
-		Iterable<SpotPrices> spotIt = tabelaService.listarInstancias(cloud, region, instanceType);
+		Iterable<EstruturaTabela> spotIt = tabelaService.listarInstancias(cloud, region, instanceType);
 		mdv.addObject("spots", spotIt);
 		return mdv;
 	}

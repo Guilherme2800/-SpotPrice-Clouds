@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -40,7 +41,10 @@ public class EnviarAzureNormal {
 	@Autowired
 	private InstanceNormalPriceRepository instanceRepository;
 
-	 @Scheduled(fixedDelay = SEMANA)
+	@Autowired
+	private SpotRepository spotRepository;
+
+	// @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
 
 		InstanceNormalPrice instanceNormal;
@@ -75,8 +79,13 @@ public class EnviarAzureNormal {
 
 					} else {
 
-						// Se não existir, insere os dados na tabela
-						insertSpotPrices(spotAzure, dataSpotFormatada);
+						List<SpotPrices> spotPrices = spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregion(
+								"AZURE", spotAzure.getSkuName(), spotAzure.getLocation());
+
+						if (spotPrices != null) {
+							// Se não existir, insere os dados na tabela
+							insertInstancePrice(spotAzure, dataSpotFormatada);
+						}
 
 					}
 
@@ -127,7 +136,7 @@ public class EnviarAzureNormal {
 
 	}
 
-	protected void insertSpotPrices(SpotAzure spotAzure, String dataSpotFormatada) {
+	protected void insertInstancePrice(SpotAzure spotAzure, String dataSpotFormatada) {
 
 		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
 
