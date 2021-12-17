@@ -1,21 +1,16 @@
 package com.finops.spotprice.service;
 
-import java.math.BigDecimal;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.servlet.ModelAndView;
 
 import com.finops.spotprice.model.EstruturaTabela;
 import com.finops.spotprice.persistence.entity.InstanceNormalPrice;
 import com.finops.spotprice.persistence.entity.SpotPrices;
-import com.finops.spotprice.persistence.repository.InstanceNormalPriceRepository;
+import com.finops.spotprice.persistence.repository.InstanceNormalRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
 
 @Service
@@ -25,7 +20,7 @@ public class TabelaSpotPricesService {
 	SpotRepository spotRepository;
 
 	@Autowired
-	InstanceNormalPriceRepository instanceRepository;
+	InstanceNormalRepository instanceRepository;
 
 	public Iterable<EstruturaTabela> listarInstancias(String cloud, String region, String instanceType) {
 
@@ -65,7 +60,7 @@ public class TabelaSpotPricesService {
 		return tabelaIt;
 	}
 
-	public Iterable<EstruturaTabela> adicionarInstanciasNormais(Iterable<SpotPrices> spotIt) {
+	private Iterable<EstruturaTabela> adicionarInstanciasNormais(Iterable<SpotPrices> spotIt) {
 
 		List<InstanceNormalPrice> instanceNormal = instanceRepository.findAll();
 		List<EstruturaTabela> estruturaTabelaList = new ArrayList<EstruturaTabela>();
@@ -103,8 +98,6 @@ public class TabelaSpotPricesService {
 			if (!possuiInstanceNormal) {
 
 				EstruturaTabela estruturaTabela = new EstruturaTabela();
-
-				BigDecimal valorZerado = new BigDecimal("0");
 
 				estruturaTabela.setCloudName(spotPrices.getCloudName());
 				estruturaTabela.setInstanceType(spotPrices.getInstanceType());

@@ -8,7 +8,7 @@ import com.finops.spotprice.persistence.entity.InstanceNormalPrice;
 import com.finops.spotprice.persistence.entity.SpotPrices;
 
 @Repository
-public interface InstanceNormalPriceRepository extends JpaRepository<InstanceNormalPrice, Long> {
+public interface InstanceNormalRepository extends JpaRepository<InstanceNormalPrice, Long> {
 
 	// Query SQL
 		@Query(value = "select * from instanceprices where cloud_name = ? and instance_type = ? and region = ? and product_description = ?", nativeQuery = true)

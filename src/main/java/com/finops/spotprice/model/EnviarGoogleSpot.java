@@ -47,7 +47,7 @@ public class EnviarGoogleSpot {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	//@Scheduled(fixedDelay = SEMANA)
+	// @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
 
 		// Pega a data atual
@@ -119,7 +119,8 @@ public class EnviarGoogleSpot {
 							region = matcher.group(1);
 
 							// Verifica se o nome que ele pegou realmente é uma região
-							if (!region.contains("ssd") && !region.contains("memory") && !region.contains("cores")) {
+							if (region.contains("central") || region.contains("east") || region.contains("west")
+									|| region.contains("north") || region.contains("south") || region.contains("northeast") || region.contains("southeast")) {
 
 								// ------Instance PRICE-----
 								int indice = linhaAtual.indexOf(":");

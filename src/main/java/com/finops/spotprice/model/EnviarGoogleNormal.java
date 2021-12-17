@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 
 import com.finops.spotprice.persistence.entity.InstanceNormalPrice;
 import com.finops.spotprice.persistence.entity.SpotPrices;
-import com.finops.spotprice.persistence.repository.InstanceNormalPriceRepository;
+import com.finops.spotprice.persistence.repository.InstanceNormalRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
 import com.finops.spotprice.service.ReceberJson;
 import com.google.gson.JsonElement;
@@ -41,7 +41,7 @@ public class EnviarGoogleNormal {
 	private SpotRepository spotRepository;
 
 	@Autowired
-	private InstanceNormalPriceRepository instanceRepository;
+	private InstanceNormalRepository instanceRepository;
 
 	// @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
@@ -117,9 +117,8 @@ public class EnviarGoogleNormal {
 							region = matcher.group(1);
 
 							// Verifica se o nome que ele pegou realmente é uma região
-							if (!region.contains("ssd") && !region.contains("memory") && !region.contains("cores")
-									&& !region.contains("gceu") && !region.contains("maxNumberOfPd") && !region.contains("maxPdSize")
-									&& !region.contains("cpu")) {
+							if (region.contains("central") || region.contains("east") || region.contains("west")
+									|| region.contains("north") || region.contains("south") || region.contains("northeast") || region.contains("southeast")) {
 
 								// ------Instance PRICE-----
 								int indice = linhaAtual.indexOf(":");
@@ -141,7 +140,7 @@ public class EnviarGoogleNormal {
 
 									// --------------------ENVIO PARA O BANCO DE DADOS ----------------
 									instanceNormal = null;
-									instanceNormal = selectInstancePrices("GOOGLE", instanceType, region,
+									instanceNormal = selectInstancePrice("GOOGLE", instanceType, region,
 											productDescription);
 
 									// Se o dado já estar no banco de dados, entra no IF
@@ -184,7 +183,7 @@ public class EnviarGoogleNormal {
 
 	}
 
-	protected InstanceNormalPrice selectInstancePrices(String cloudName, String instanceType, String region,
+	protected InstanceNormalPrice selectInstancePrice(String cloudName, String instanceType, String region,
 			String productDescription) {
 
 		return instanceRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("GOOGLE",

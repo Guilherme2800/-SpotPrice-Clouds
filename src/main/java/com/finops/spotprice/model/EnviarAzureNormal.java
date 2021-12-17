@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import com.finops.spotprice.persistence.entity.InstanceNormalPrice;
 import com.finops.spotprice.persistence.entity.PriceHistorySpot;
 import com.finops.spotprice.persistence.entity.SpotPrices;
-import com.finops.spotprice.persistence.repository.InstanceNormalPriceRepository;
+import com.finops.spotprice.persistence.repository.InstanceNormalRepository;
 import com.finops.spotprice.persistence.repository.PriceHistoryRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
 import com.finops.spotprice.service.JsonForObjectAzure;
@@ -39,7 +39,7 @@ public class EnviarAzureNormal {
 			+ sdf.format(data) + "-01";
 
 	@Autowired
-	private InstanceNormalPriceRepository instanceRepository;
+	private InstanceNormalRepository instanceRepository;
 
 	@Autowired
 	private SpotRepository spotRepository;
@@ -69,13 +69,13 @@ public class EnviarAzureNormal {
 					String dataSpotFormatada = dataSpot.format(formatarPadrao);
 
 					// verificar se já existe esse dado no banco de dados
-					instanceNormal = selectInstancePrices(spotAzure);
+					instanceNormal = selectInstancePrice(spotAzure);
 
 					// Se existir na entra no IF
 					if (instanceNormal != null) {
 
 						// Atualiza o valor e data da requisição
-						updateSpotPrices(spotAzure, instanceNormal, dataSpotFormatada);
+						updateInstancePrice(spotAzure, instanceNormal, dataSpotFormatada);
 
 					} else {
 
@@ -118,14 +118,14 @@ public class EnviarAzureNormal {
 		return azureArrayObject;
 	}
 
-	protected InstanceNormalPrice selectInstancePrices(SpotAzure spotAzure) {
+	protected InstanceNormalPrice selectInstancePrice(SpotAzure spotAzure) {
 
 		return instanceRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",
 				spotAzure.getSkuName(), spotAzure.getLocation(), spotAzure.getProductName());
 
 	}
 
-	protected void updateSpotPrices(SpotAzure spotAzure, InstanceNormalPrice instanceNormal, String dataSpotFormatada) {
+	protected void updateInstancePrice(SpotAzure spotAzure, InstanceNormalPrice instanceNormal, String dataSpotFormatada) {
 
 		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
 
