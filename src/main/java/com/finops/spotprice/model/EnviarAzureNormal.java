@@ -40,7 +40,7 @@ public class EnviarAzureNormal {
 	@Autowired
 	private InstanceNormalPriceRepository instanceRepository;
 
-    @Scheduled(fixedDelay = SEMANA)
+	 @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
 
 		InstanceNormalPrice instanceNormal;
@@ -55,7 +55,7 @@ public class EnviarAzureNormal {
 		while (proximo) {
 			for (SpotAzure spotAzure : azureSpot.getItems()) {
 
-				if (spotAzure.getUnitPrice() != 0 && !spotAzure.getSkuName().contains("Spot")){
+				if (spotAzure.getUnitPrice() != 0 && !spotAzure.getSkuName().contains("Spot")) {
 
 					instanceNormal = null;
 
@@ -63,8 +63,23 @@ public class EnviarAzureNormal {
 					DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
 					OffsetDateTime dataSpot = OffsetDateTime.parse(spotAzure.getEffectiveStartDate());
 					String dataSpotFormatada = dataSpot.format(formatarPadrao);
-					
+
+					// verificar se já existe esse dado no banco de dados
+					instanceNormal = selectInstancePrices(spotAzure);
+
+					// Se existir na entra no IF
+					if (instanceNormal != null) {
+
+						// Atualiza o valor e data da requisição
+						updateSpotPrices(spotAzure, instanceNormal, dataSpotFormatada);
+
+					} else {
+
+						// Se não existir, insere os dados na tabela
 						insertSpotPrices(spotAzure, dataSpotFormatada);
+
+					}
+
 				}
 
 			}
@@ -73,15 +88,15 @@ public class EnviarAzureNormal {
 			if (azureSpot.getCount() < 100) {
 				proximo = false;
 			} else if (azureSpot.getNextPageLink() != null) {
-				
+
 				azureSpot = solicitarObjetoAzure(azureSpot.getNextPageLink());
 			} else {
 				proximo = false;
 			}
 		}
-		
+
 		System.out.println("Azure enviada.");
-		
+
 	}
 
 	protected SpotAzureArray solicitarObjetoAzure(String URL) {
@@ -94,27 +109,27 @@ public class EnviarAzureNormal {
 		return azureArrayObject;
 	}
 
-//	protected SpotPrices selectSpotPrices(SpotAzure spotAzure) {
-//
-//		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",spotAzure.getSkuName().replaceAll(" Spot", ""),
-//				spotAzure.getLocation(), spotAzure.getProductName());
-//
-//	}
+	protected InstanceNormalPrice selectInstancePrices(SpotAzure spotAzure) {
 
-//	protected void updateSpotPrices(SpotAzure spotAzure, SpotPrices spotPrices, String dataSpotFormatada) {
-//
-//		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5,BigDecimal.ROUND_HALF_UP);
-//		
-//		spotPrices.setPrice(preco);
-//		spotPrices.setDataReq(dataSpotFormatada);
-//
-//		instanceRepository.save(InstanceNormalPrice);
-//
-//	}
+		return instanceRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",
+				spotAzure.getSkuName(), spotAzure.getLocation(), spotAzure.getProductName());
+
+	}
+
+	protected void updateSpotPrices(SpotAzure spotAzure, InstanceNormalPrice instanceNormal, String dataSpotFormatada) {
+
+		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
+
+		instanceNormal.setPrice(preco);
+		instanceNormal.setDataReq(dataSpotFormatada);
+
+		instanceRepository.save(instanceNormal);
+
+	}
 
 	protected void insertSpotPrices(SpotAzure spotAzure, String dataSpotFormatada) {
-		
-		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5,BigDecimal.ROUND_HALF_UP);
+
+		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
 
 		InstanceNormalPrice instanceNormal = new InstanceNormalPrice();
 		instanceNormal.setCloudName("AZURE");

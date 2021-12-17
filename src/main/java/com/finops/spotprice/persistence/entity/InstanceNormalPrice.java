@@ -18,7 +18,7 @@ public class InstanceNormalPrice {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long cod_spot;
+	Long cod_instance;
 	
 	@Column(name = "cloud_name")
 	private String cloudName;

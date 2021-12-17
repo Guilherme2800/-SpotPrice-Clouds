@@ -17,49 +17,41 @@ public class TabelaSpotPricesService {
 	@Autowired
 	SpotRepository spotRepository;
 
-	@RequestMapping(method = RequestMethod.GET, value = "/listarSpot")
-	public ModelAndView listarIndividuos(String cloud, String region, String instanceType) {
-		ModelAndView modelView = new ModelAndView("paginaPrincipal/tabelaSpot");
+	public Iterable<SpotPrices> listarInstancias(String cloud, String region, String instanceType) {
+
+		Iterable<SpotPrices> spotIt = null;
 
 		if (cloud.length() != 0 && region.length() != 0 && instanceType.length() != 0) {
-			Iterable<SpotPrices> spotIt = spotRepository.findBycloudNameAndRegionAndInstanceType(cloud, region,instanceType);
-			modelView.addObject("spots", spotIt);
-			return modelView;
+			spotIt = spotRepository.findBycloudNameAndRegionAndInstanceType(cloud, region, instanceType);
+			return spotIt;
 		}
-		
-		if (cloud.length() != 0 && region.length() != 0) {
-			Iterable<SpotPrices> spotIt = spotRepository.findBycloudNameAndRegion(cloud, region);
-			modelView.addObject("spots", spotIt);
-			return modelView;
-		}
-		
-		if (cloud.length() != 0 && instanceType.length() != 0) {
-			Iterable<SpotPrices> spotIt = spotRepository.findBycloudNameAndInstanceType(cloud, instanceType);
-			modelView.addObject("spots", spotIt);
-			return modelView;
-		}
-		
-		if (region.length() != 0) {
-			Iterable<SpotPrices> spotIt = spotRepository.findByregion(region);
-			modelView.addObject("spots", spotIt);
-			return modelView;
-		}
-		
-		if (instanceType.length() != 0) {
-			Iterable<SpotPrices> spotIt = spotRepository.findByinstanceType(instanceType);
-			modelView.addObject("spots", spotIt);
-			return modelView;
-		}
-		
-		if (cloud.length() != 0) {
-			Iterable<SpotPrices> spotIt = spotRepository.findBycloudName(cloud);
-			modelView.addObject("spots", spotIt);
-			return modelView;
-		}
-		
-		
 
-		return modelView;
+		if (cloud.length() != 0 && region.length() != 0) {
+			spotIt = spotRepository.findBycloudNameAndRegion(cloud, region);
+			return spotIt;
+		}
+
+		if (cloud.length() != 0 && instanceType.length() != 0) {
+			spotIt = spotRepository.findBycloudNameAndInstanceType(cloud, instanceType);
+			return spotIt;
+		}
+
+		if (region.length() != 0) {
+			spotIt = spotRepository.findByregion(region);
+			return spotIt;
+		}
+
+		if (instanceType.length() != 0) {
+			spotIt = spotRepository.findByinstanceType(instanceType);
+			return spotIt;
+		}
+
+		if (cloud.length() != 0) {
+			spotIt = spotRepository.findBycloudName(cloud);
+			return spotIt;
+		}
+
+		return spotIt;
 	}
 
 }
