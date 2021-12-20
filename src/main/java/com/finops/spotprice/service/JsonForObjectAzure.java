@@ -1,4 +1,4 @@
-package com.finops.spotprice.service;
+package com.finops.spotprice.util;
 
 import java.lang.reflect.Type;
 

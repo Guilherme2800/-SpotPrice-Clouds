@@ -25,7 +25,7 @@ import com.finops.spotprice.persistence.entity.PriceHistorySpot;
 import com.finops.spotprice.persistence.entity.SpotPrices;
 import com.finops.spotprice.persistence.repository.PriceHistoryRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
-import com.finops.spotprice.service.ReceberJson;
+import com.finops.spotprice.util.ReceberJson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 

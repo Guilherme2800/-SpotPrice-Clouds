@@ -18,7 +18,7 @@ import com.finops.spotprice.persistence.entity.SpotPrices;
 import com.finops.spotprice.persistence.repository.InstanceNormalRepository;
 import com.finops.spotprice.persistence.repository.PriceHistoryRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
-import com.finops.spotprice.service.JsonForObjectAzure;
+import com.finops.spotprice.util.JsonForObjectAzure;
 
 @Component
 @EnableScheduling
