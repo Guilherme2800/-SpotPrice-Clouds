@@ -1,14 +1,10 @@
 package com.finops.spotprice.model;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.MathContext;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -21,9 +17,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.finops.spotprice.persistence.entity.PriceHistory;
+import com.finops.spotprice.persistence.entity.InstanceNormalPrice;
 import com.finops.spotprice.persistence.entity.SpotPrices;
-import com.finops.spotprice.persistence.repository.PriceHistoryRepository;
+import com.finops.spotprice.persistence.repository.InstanceNormalRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
 import com.finops.spotprice.service.ReceberJson;
 import com.google.gson.JsonElement;
@@ -31,7 +27,7 @@ import com.google.gson.JsonObject;
 
 @Component
 @EnableScheduling
-public class EnviarGoogle {
+public class EnviarGoogleNormal {
 
 	private final long SEGUNDO = 1000;
 	private final long MINUTO = SEGUNDO * 60;
@@ -45,7 +41,7 @@ public class EnviarGoogle {
 	private SpotRepository spotRepository;
 
 	@Autowired
-	private PriceHistoryRepository priceHistoryRepository;
+	private InstanceNormalRepository instanceRepository;
 
 	// @Scheduled(fixedDelay = SEMANA)
 	public void enviar() {
@@ -56,11 +52,11 @@ public class EnviarGoogle {
 		// Formata para a data.
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-		SpotPrices spotPrices;
+		InstanceNormalPrice instanceNormal;
 
 		ReceberJson json = new ReceberJson();
 
-		System.out.println("\nEnviando GOOGLE");
+		System.out.println("\nEnviando GOOGLE sob demanda");
 
 		try {
 
@@ -70,7 +66,8 @@ public class EnviarGoogle {
 			// Pega o objeto JSON que contém as instancias
 			JsonObject listInstancias = (JsonObject) jsonObject.get("gcp_price_list");
 
-			//Realiza o mapeamento chave valor dos tipos de instâncias para seus valores em todas regiões
+			// Realiza o mapeamento chave valor dos tipos de instâncias para seus valores em
+			// todas regiões
 			Map<String, Object> attributes = new HashMap<String, Object>();
 			Set<Entry<String, JsonElement>> entrySet = listInstancias.entrySet();
 			for (Map.Entry<String, JsonElement> entry : entrySet) {
@@ -79,7 +76,7 @@ public class EnviarGoogle {
 
 			// Percorre as posições chave/valor
 			for (Map.Entry<String, Object> instancia : attributes.entrySet()) {
-				if (instancia.getKey().contains("PREEMPTIBLE")) {
+				if (!instancia.getKey().contains("PREEMPTIBLE") && instancia.getKey().contains("CP-COMPUTEENGINE-") && !instancia.getKey().contains("CP-COMPUTEENGINE-OS")) {
 
 					// -----Descrição do produto-----
 					String productDescription = instancia.getKey().toLowerCase().substring(0, 16);
@@ -92,7 +89,8 @@ public class EnviarGoogle {
 							.replaceAll("VMIMAGE-", "").replaceAll("-PREEMPTIBLE", "").replaceAll("-", " ")
 							.toLowerCase();
 
-					// Divide a string de precos em pequenas partes, cada parte contem a região e o preço
+					// Divide a string de precos em pequenas partes, cada parte contem a região e o
+					// preço
 					StringTokenizer st = new StringTokenizer(instancia.getValue().toString() + "\n\n");
 
 					boolean continuar;
@@ -119,7 +117,8 @@ public class EnviarGoogle {
 							region = matcher.group(1);
 
 							// Verifica se o nome que ele pegou realmente é uma região
-							if (!region.contains("ssd") && !region.contains("memory") && !region.contains("cores")) {
+							if (region.contains("central") || region.contains("east") || region.contains("west")
+									|| region.contains("north") || region.contains("south") || region.contains("northeast") || region.contains("southeast")) {
 
 								// ------Instance PRICE-----
 								int indice = linhaAtual.indexOf(":");
@@ -130,7 +129,8 @@ public class EnviarGoogle {
 									precoFormatado = precoFormatado.substring(0, 7);
 								}
 
-								preco = new BigDecimal(Double.parseDouble(precoFormatado)).setScale(7,BigDecimal.ROUND_HALF_UP);
+								preco = new BigDecimal(Double.parseDouble(precoFormatado)).setScale(7,
+										BigDecimal.ROUND_HALF_UP);
 								// ------ FIM Instance PRICE-----
 
 								BigDecimal valorZerado = new BigDecimal("0.000000");
@@ -139,27 +139,27 @@ public class EnviarGoogle {
 								if ((preco.compareTo(valorZerado)) != 0) {
 
 									// --------------------ENVIO PARA O BANCO DE DADOS ----------------
-									spotPrices = null;
-									spotPrices = selectSpotPrices("GOOGLE", instanceType, region, productDescription);
+									instanceNormal = null;
+									instanceNormal = selectInstancePrice("GOOGLE", instanceType, region,
+											productDescription);
 
 									// Se o dado já estar no banco de dados, entra no IF
-									if (spotPrices != null) {
+									if (instanceNormal != null) {
 
-										PriceHistory priceHistory = selectPriceHistory(spotPrices);
+										// Atualiza o dado atual do spotPrices com a nova data e preco
+										updateInstancePrice(instanceNormal, preco, sdf.format(data));
 
-										// Se o dado não estiver já em priceHistory, entra no IF
-										if (priceHistory == null) {
-											// Insere o dado atual na tabela de historico
-											insertPriceHistory(spotPrices);
-
-											// Atualiza o dado atual do spotPrices com a nova data e preco
-											updateSpotPrices(spotPrices, preco, sdf.format(data));
-										}
 									} else {
 										// Se o dado não existir, insere ele no banco de dados
 
-										insertSpotprices("GOOGLE", instanceType, region, productDescription, preco,
-												sdf.format(data));
+										List<SpotPrices> spotPrices = spotRepository
+												.findBySelectUsingcloudNameAndinstanceTypeAndregion("GOOGLE",
+														instanceType, region);
+
+										if (spotPrices != null) {
+											insertInstancePrice("GOOGLE", instanceType, region, productDescription,
+													preco, sdf.format(data));
+										}
 
 									}
 
@@ -183,50 +183,33 @@ public class EnviarGoogle {
 
 	}
 
-	protected SpotPrices selectSpotPrices(String cloudName, String instanceType, String region,
+	protected InstanceNormalPrice selectInstancePrice(String cloudName, String instanceType, String region,
 			String productDescription) {
 
-		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("GOOGLE",
+		return instanceRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("GOOGLE",
 				instanceType, region, productDescription);
 	}
 
-	protected PriceHistory selectPriceHistory(SpotPrices spotPrices) {
+	protected void updateInstancePrice(InstanceNormalPrice instanceNormal, BigDecimal unitPrice,
+			String dataSpotFormatada) {
+		instanceNormal.setPrice(unitPrice);
+		instanceNormal.setDataReq(dataSpotFormatada);
 
-		return priceHistoryRepository.findBySelectUsingcodSpotAndpriceAnddataReq(spotPrices.getCod_spot(),
-				spotPrices.getPrice().doubleValue(), spotPrices.getDataReq());
-
+		instanceRepository.save(instanceNormal);
 	}
 
-	protected void insertPriceHistory(SpotPrices spotPrices) {
-
-		PriceHistory priceHistory = new PriceHistory();
-
-		priceHistory.setCodSpot(spotPrices.getCod_spot());
-		priceHistory.setPrice(spotPrices.getPrice().doubleValue());
-		priceHistory.setDataReq(spotPrices.getDataReq());
-
-		priceHistoryRepository.save(priceHistory);
-	}
-
-	protected void updateSpotPrices(SpotPrices spotPrices, BigDecimal unitPrice, String dataSpotFormatada) {
-		spotPrices.setPrice(unitPrice);
-		spotPrices.setDataReq(dataSpotFormatada);
-
-		spotRepository.save(spotPrices);
-	}
-
-	protected void insertSpotprices(String cloudName, String instanceType, String region, String productDescription,
+	protected void insertInstancePrice(String cloudName, String instanceType, String region, String productDescription,
 			BigDecimal unitPrice, String dataSpotFormatada) {
 
-		SpotPrices newSpotPrice = new SpotPrices();
-		newSpotPrice.setCloudName("GOOGLE");
-		newSpotPrice.setInstanceType(instanceType);
-		newSpotPrice.setRegion(region);
-		newSpotPrice.setProductDescription(productDescription);
-		newSpotPrice.setPrice(unitPrice);
-		newSpotPrice.setDataReq(dataSpotFormatada);
+		InstanceNormalPrice instanceNormal = new InstanceNormalPrice();
+		instanceNormal.setCloudName("GOOGLE");
+		instanceNormal.setInstanceType(instanceType);
+		instanceNormal.setRegion(region);
+		instanceNormal.setProductDescription(productDescription);
+		instanceNormal.setPrice(unitPrice);
+		instanceNormal.setDataReq(dataSpotFormatada);
 
-		spotRepository.save(newSpotPrice);
+		instanceRepository.save(instanceNormal);
 
 	}
 
