@@ -47,14 +47,14 @@ public class EnviarAzureSpot {
 		SpotPrices spotPrices;
 
 		// Recebe o json convertido
-		SpotAzureArray azureSpot = solicitarObjetoAzure(URL);
+		InstancesAzureArray azureSpot = solicitarObjetoAzure(URL);
 
 		System.out.println("\nEnviando Azure Spot para o banco de dados");
 
 		boolean proximo = true;
 
 		while (proximo) {
-			for (SpotAzure spotAzure : azureSpot.getItems()) {
+			for (InstanceAzure spotAzure : azureSpot.getItems()) {
 
 				if (spotAzure.getUnitPrice() != 0) {
 
@@ -110,17 +110,17 @@ public class EnviarAzureSpot {
 		
 	}
 
-	protected SpotAzureArray solicitarObjetoAzure(String URL) {
+	protected InstancesAzureArray solicitarObjetoAzure(String URL) {
 
 		// Instancia o objeto que vai converter o JSON para objeto
 		JsonForObjectAzure JsonForAzure = new JsonForObjectAzure();
 
-		SpotAzureArray azureArrayObject = JsonForAzure.converter(URL);
+		InstancesAzureArray azureArrayObject = JsonForAzure.converter(URL);
 
 		return azureArrayObject;
 	}
 
-	protected SpotPrices selectSpotPrices(SpotAzure spotAzure) {
+	protected SpotPrices selectSpotPrices(InstanceAzure spotAzure) {
 
 		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",spotAzure.getSkuName().replaceAll(" Spot", ""),
 				spotAzure.getLocation(), spotAzure.getProductName());
@@ -146,7 +146,7 @@ public class EnviarAzureSpot {
 
 	}
 
-	protected void updateSpotPrices(SpotAzure spotAzure, SpotPrices spotPrices, String dataSpotFormatada) {
+	protected void updateSpotPrices(InstanceAzure spotAzure, SpotPrices spotPrices, String dataSpotFormatada) {
 
 		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5,BigDecimal.ROUND_HALF_UP);
 		
@@ -157,7 +157,7 @@ public class EnviarAzureSpot {
 
 	}
 
-	protected void insertSpotPrices(SpotAzure spotAzure, String dataSpotFormatada) {
+	protected void insertSpotPrices(InstanceAzure spotAzure, String dataSpotFormatada) {
 		
 		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5,BigDecimal.ROUND_HALF_UP);
 

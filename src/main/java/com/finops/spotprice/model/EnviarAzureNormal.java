@@ -50,14 +50,14 @@ public class EnviarAzureNormal {
 		InstanceNormalPrice instanceNormal;
 
 		// Recebe o json convertido
-		SpotAzureArray azureSpot = solicitarObjetoAzure(URL);
+		InstancesAzureArray azureSpot = solicitarObjetoAzure(URL);
 
 		System.out.println("\nEnviando Azure para o banco de dados");
 
 		boolean proximo = true;
 
 		while (proximo) {
-			for (SpotAzure spotAzure : azureSpot.getItems()) {
+			for (InstanceAzure spotAzure : azureSpot.getItems()) {
 
 				if (spotAzure.getUnitPrice() != 0 && !spotAzure.getSkuName().contains("Spot")) {
 
@@ -108,24 +108,24 @@ public class EnviarAzureNormal {
 
 	}
 
-	protected SpotAzureArray solicitarObjetoAzure(String URL) {
+	protected InstancesAzureArray solicitarObjetoAzure(String URL) {
 
 		// Instancia o objeto que vai converter o JSON para objeto
 		JsonForObjectAzure JsonForAzure = new JsonForObjectAzure();
 
-		SpotAzureArray azureArrayObject = JsonForAzure.converter(URL);
+		InstancesAzureArray azureArrayObject = JsonForAzure.converter(URL);
 
 		return azureArrayObject;
 	}
 
-	protected InstanceNormalPrice selectInstancePrice(SpotAzure spotAzure) {
+	protected InstanceNormalPrice selectInstancePrice(InstanceAzure spotAzure) {
 
 		return instanceRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",
 				spotAzure.getSkuName(), spotAzure.getLocation(), spotAzure.getProductName());
 
 	}
 
-	protected void updateInstancePrice(SpotAzure spotAzure, InstanceNormalPrice instanceNormal, String dataSpotFormatada) {
+	protected void updateInstancePrice(InstanceAzure spotAzure, InstanceNormalPrice instanceNormal, String dataSpotFormatada) {
 
 		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
 
@@ -136,7 +136,7 @@ public class EnviarAzureNormal {
 
 	}
 
-	protected void insertInstancePrice(SpotAzure spotAzure, String dataSpotFormatada) {
+	protected void insertInstancePrice(InstanceAzure spotAzure, String dataSpotFormatada) {
 
 		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
 
