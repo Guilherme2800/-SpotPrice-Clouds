@@ -12,8 +12,6 @@ import com.finops.spotprice.persistence.entity.SpotPrices;
 import com.finops.spotprice.service.SpotPricesService;
 
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 
 @RestController
 public class SpotPricesController {
@@ -34,7 +32,7 @@ public class SpotPricesController {
 		Page<SpotPrices> spotPrices = spotPricesService.listarCloud(cloudName, pageable);
 		return ResponseEntity.ok(spotPrices);
 	}
-	
+
 	@ApiOperation("API responsável por listar as instâncias Spot das Clouds trabalhadas, filtrando a região.")
 	@GetMapping("/listar/region/{region}")
 	public ResponseEntity<Page<SpotPrices>> listarRegion(@PathVariable String region, Pageable pageable){
@@ -43,7 +41,7 @@ public class SpotPricesController {
 	}
 	
 	@ApiOperation("API responsável por listar as instâncias Spot das Clouds trabalhadas, fitrando por tipo de instância.")
-	@GetMapping("/listar/instanceType/{tipoInstancia}")
+	@GetMapping("/listar/instanceType/{instanceType}")
 	public ResponseEntity<Page<SpotPrices>> listarInstanceType(@PathVariable String instanceType, Pageable pageable){
 		Page<SpotPrices> spotPrices = spotPricesService.listarInstanceType(instanceType, pageable);
 		return ResponseEntity.ok(spotPrices);
