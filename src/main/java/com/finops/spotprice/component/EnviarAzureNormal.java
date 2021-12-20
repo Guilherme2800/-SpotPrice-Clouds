@@ -1,4 +1,4 @@
-package com.finops.spotprice.model;
+package com.finops.spotprice.component;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -12,6 +12,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.finops.spotprice.model.InstanceAzure;
+import com.finops.spotprice.model.InstancesAzureArray;
 import com.finops.spotprice.persistence.entity.InstanceNormalPrice;
 import com.finops.spotprice.persistence.entity.PriceHistorySpot;
 import com.finops.spotprice.persistence.entity.SpotPrices;

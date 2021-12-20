@@ -1,4 +1,4 @@
-package com.finops.spotprice.model;
+package com.finops.spotprice.component;
 
 import java.io.IOException;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package com.finops.spotprice.model;
+package com.finops.spotprice.component;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
