@@ -138,8 +138,10 @@ public class EnviarAzureNormal {
 
 	}
 
-	protected void insertInstancePrice(InstanceAzure spotAzure, String dataSpotFormatada) {
+	protected boolean insertInstancePrice(InstanceAzure spotAzure, String dataSpotFormatada) {
 
+		boolean salvoSucesso = false;
+		
 		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
 
 		InstanceNormalPrice instanceNormal = new InstanceNormalPrice();
@@ -150,7 +152,13 @@ public class EnviarAzureNormal {
 		instanceNormal.setPrice(preco);
 		instanceNormal.setDataReq(dataSpotFormatada);
 
-		instanceRepository.save(instanceNormal);
+		InstanceNormalPrice instanceSave = instanceRepository.save(instanceNormal);
+		System.out.println(instanceSave);
+		if(instanceSave != null) {
+			salvoSucesso = true;
+		}
+		
+		return salvoSucesso;
 
 	}
 
