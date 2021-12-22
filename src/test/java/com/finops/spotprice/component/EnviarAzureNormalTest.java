@@ -5,68 +5,159 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import com.finops.spotprice.SpotpriceApplicationTests;
 import com.finops.spotprice.model.InstanceAzure;
+import com.finops.spotprice.model.InstancesAzureArray;
 import com.finops.spotprice.persistence.entity.InstanceNormalPrice;
+import com.finops.spotprice.persistence.entity.SpotPrices;
 import com.finops.spotprice.persistence.repository.InstanceNormalRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
-
+import com.finops.spotprice.util.JsonForObjectAzure;
 
 @ExtendWith(SpringExtension.class)
-class EnviarAzureNormalTest extends SpotpriceApplicationTests{
-	
+class EnviarAzureNormalTest extends SpotpriceApplicationTests {
+
 	@InjectMocks
 	private EnviarAzureNormal envioAzure = new EnviarAzureNormal();
+
+	@Mock
+	private InstanceNormalRepository instanceRepositoryMock;
 	
 	@Mock
-	private InstanceNormalRepository instanceRepository;
+	private SpotRepository spotRepositoryMock;
+
+	InstanceNormalPrice instanceNormal;
+	InstanceAzure instanceAzure;
+
+	String dataSpotFormatada;
 	
-	@Test
-	public void select() {
-		
-		boolean resultado = false;
-		
-		InstanceNormalPrice instanceNormal = new InstanceNormalPrice();
-		
+	@BeforeEach
+	void setUp() {
+
+		instanceNormal = new InstanceNormalPrice();
+
 		instanceNormal.setCloudName("AZURE");
 		instanceNormal.setDataReq("15-01-2000");
 		instanceNormal.setInstanceType("kf1");
 		instanceNormal.setPrice(new BigDecimal(5.33));
 		instanceNormal.setRegion("russia");
 		instanceNormal.setProductDescription("Teste de produto");
-		
-		InstanceAzure instanceAzure = new InstanceAzure();
-		
+
+		instanceAzure = new InstanceAzure();
+
 		instanceAzure.setSkuName("kf1");
 		instanceAzure.setLocation("russia");
 		instanceAzure.setProductName("Teste de produto");
 		instanceAzure.setUnitPrice(5.33);
 		instanceAzure.setEffectiveStartDate("2021-10-01T00:00:00Z");
-		
+
 		// Formata a data
 		DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
 		OffsetDateTime dataSpot = OffsetDateTime.parse(instanceAzure.getEffectiveStartDate());
-		String dataSpotFormatada = dataSpot.format(formatarPadrao);
-		
-		BDDMockito.when(instanceRepository.save(instanceNormal)).thenReturn(instanceNormal);
-		
+		dataSpotFormatada = dataSpot.format(formatarPadrao);
+	}
+
+	@Test
+	public void insertInstanceNormal_Sucesso() {
+
+		boolean resultado = false;
+
+		BDDMockito.when(instanceRepositoryMock.save(ArgumentMatchers.any())).thenReturn(instanceNormal);
+
 		resultado = envioAzure.insertInstancePrice(instanceAzure, dataSpotFormatada);
-		
-		assertTrue(resultado);
+
+		Assertions.assertThat(resultado).isTrue();
 	}
 	
+	@Test
+	public void updateInstanceNormal_Sucesso() {
+
+		boolean resultado = false;
+
+		BDDMockito.when(instanceRepositoryMock.save(ArgumentMatchers.any())).thenReturn(instanceNormal);
+
+		resultado = envioAzure.updateInstancePrice(instanceAzure, instanceNormal, dataSpotFormatada);
+
+		Assertions.assertThat(resultado).isTrue();
+
+	}
+
+	@Test
+	public void selectInstanceNormal_Sucesso() {
+
+		InstanceNormalPrice instance = null;
+
+		BDDMockito.when(instanceRepositoryMock.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription(
+				ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString(),
+				ArgumentMatchers.anyString())).thenReturn(instanceNormal);
+
+		instance = envioAzure.selectInstancePrice(instanceAzure);
+
+		Assertions.assertThat(instance).isNotNull();
+
+	}
+
+	@Test
+	public void solicitarArrayAzure_Sucesso() {
+
+		InstancesAzureArray azureArray;
+
+		azureArray = envioAzure.solicitarObjetoAzure(
+				"https://prices.azure.com/api/retail/prices?$skip=0&$filter=serviceName%20eq%20%27Virtual%20Machines%27%20and%20priceType%20eq%20%27Consumption%27");
+
+		Assertions.assertThat(azureArray).isNotNull();
+	}
+	
+	@Test
+	public void percorrerPaginaInstanciaExiste_Sucesso() {
+		
+		BDDMockito.when(instanceRepositoryMock.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription(
+				ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString(),
+				ArgumentMatchers.anyString())).thenReturn(instanceNormal);
+		
+		BDDMockito.when(instanceRepositoryMock.save(ArgumentMatchers.any())).thenReturn(instanceNormal);
+		
+		boolean resultado = envioAzure.enviar();
+		
+		Assertions.assertThat(resultado).isTrue();
+		
+		
+	}
+	
+	@Test
+	public void percorrerPaginaNaoExisteInstancia_Sucesso() {
+		
+		SpotPrices spot = new SpotPrices();
+		spot.setCloudName("AWS");
+		
+		List<SpotPrices> spotList = new ArrayList<SpotPrices>();
+		spotList.add(spot);
+		
+		BDDMockito.when(instanceRepositoryMock.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription(
+				ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString(),
+				ArgumentMatchers.anyString())).thenReturn(null);
+		
+		BDDMockito.when(spotRepositoryMock.findBySelectUsingcloudNameAndinstanceTypeAndregion(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(spotList);
+		
+		BDDMockito.when(instanceRepositoryMock.save(ArgumentMatchers.any())).thenReturn(instanceNormal);
+		
+		boolean resultado = envioAzure.enviar();
+		
+		Assertions.assertThat(resultado).isTrue();
+		
+		
+	}
 }

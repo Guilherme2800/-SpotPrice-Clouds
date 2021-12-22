@@ -47,7 +47,9 @@ public class EnviarAzureNormal {
 	private SpotRepository spotRepository;
 
 	// @Scheduled(fixedDelay = SEMANA)
-	public void enviar() {
+	public boolean enviar() {
+
+		boolean enviado = false;
 
 		InstanceNormalPrice instanceNormal;
 
@@ -59,12 +61,13 @@ public class EnviarAzureNormal {
 		boolean proximo = true;
 
 		while (proximo) {
-			for (InstanceAzure spotAzure : azureSpot.getItems()) {
 
+			for (InstanceAzure spotAzure : azureSpot.getItems()) {
+				
 				if (spotAzure.getUnitPrice() != 0 && !spotAzure.getSkuName().contains("Spot")) {
 
 					instanceNormal = null;
-
+					
 					// Formata a data
 					DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
 					OffsetDateTime dataSpot = OffsetDateTime.parse(spotAzure.getEffectiveStartDate());
@@ -98,15 +101,17 @@ public class EnviarAzureNormal {
 			// Controle se a existe uma proxima pagina
 			if (azureSpot.getCount() < 100) {
 				proximo = false;
+				enviado = true;
 			} else if (azureSpot.getNextPageLink() != null) {
-
 				azureSpot = solicitarObjetoAzure(azureSpot.getNextPageLink());
 			} else {
 				proximo = false;
+				enviado = true;
 			}
 		}
 
 		System.out.println("Azure enviada.");
+		return enviado;
 
 	}
 
@@ -127,21 +132,29 @@ public class EnviarAzureNormal {
 
 	}
 
-	protected void updateInstancePrice(InstanceAzure spotAzure, InstanceNormalPrice instanceNormal, String dataSpotFormatada) {
+	protected boolean updateInstancePrice(InstanceAzure spotAzure, InstanceNormalPrice instanceNormal,
+			String dataSpotFormatada) {
+
+		boolean salvoSucesso = false;
 
 		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
 
 		instanceNormal.setPrice(preco);
 		instanceNormal.setDataReq(dataSpotFormatada);
 
-		instanceRepository.save(instanceNormal);
+		InstanceNormalPrice instanceSave = instanceRepository.save(instanceNormal);
+		if (instanceSave != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
 
 	}
 
 	protected boolean insertInstancePrice(InstanceAzure spotAzure, String dataSpotFormatada) {
 
 		boolean salvoSucesso = false;
-		
+
 		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
 
 		InstanceNormalPrice instanceNormal = new InstanceNormalPrice();
@@ -153,11 +166,11 @@ public class EnviarAzureNormal {
 		instanceNormal.setDataReq(dataSpotFormatada);
 
 		InstanceNormalPrice instanceSave = instanceRepository.save(instanceNormal);
-		System.out.println(instanceSave);
-		if(instanceSave != null) {
+
+		if (instanceSave != null) {
 			salvoSucesso = true;
 		}
-		
+
 		return salvoSucesso;
 
 	}

@@ -61,7 +61,7 @@ class SpotPricesControllerTest {
 						ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.any()))
 				.thenReturn(spotPageCloudRegionInstanceType);
 	}
-
+	
 	@Test
 	void listarGeral_Sucesso() {
 
