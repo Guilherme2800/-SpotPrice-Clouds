@@ -17,6 +17,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
+import com.amazonaws.services.ec2.model.DescribeRegionsResult;
+import com.amazonaws.services.ec2.model.SpotPrice;
 import com.finops.spotprice.SpotpriceApplicationTests;
 import com.finops.spotprice.persistence.entity.PriceHistorySpot;
 import com.finops.spotprice.persistence.entity.SpotPrices;
@@ -24,26 +28,27 @@ import com.finops.spotprice.persistence.repository.PriceHistoryRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
 
 @ExtendWith(SpringExtension.class)
-class EnviarGoogleSpotTest extends SpotpriceApplicationTests{
+class EnviarAwsSpotTest extends SpotpriceApplicationTests {
 
 	@InjectMocks
-	private EnviarGoogleSpot envioGoogle = new EnviarGoogleSpot();
+	private EnviarAwsSpot envioAws = new EnviarAwsSpot();
 
-	@Mock
-	private PriceHistoryRepository historyRepositoryMock;
-	
 	@Mock
 	private SpotRepository spotRepositoryMock;
 
+	@Mock
+	private PriceHistoryRepository historyRepositoryMock;
+
 	SpotPrices spot;
 
+	SpotPrice spotAws;
+
 	String dataFormatada;
-	
+
 	@BeforeEach
 	void setUp() {
 
 		spot = new SpotPrices();
-
 		spot.setCloudName("AZURE");
 		spot.setDataReq("15-01-2000");
 		spot.setInstanceType("kf1");
@@ -51,12 +56,46 @@ class EnviarGoogleSpotTest extends SpotpriceApplicationTests{
 		spot.setRegion("russia");
 		spot.setProductDescription("Teste de produto");
 
+		spotAws = new SpotPrice();
+		spotAws.setProductDescription("teste de produto");
+		spotAws.setAvailabilityZone("Russia");
+		spotAws.setInstanceType("kf1");
+		spotAws.setSpotPrice("8.3");
+
 		// Formata a data
 		DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
 		OffsetDateTime dataSpot = OffsetDateTime.parse("2021-10-01T00:00:00Z");
 		dataFormatada = dataSpot.format(formatarPadrao);
 	}
-	
+
+	@Test
+	@DisplayName("Insere Spot - sucesso")
+	public void insertSpot_Sucesso() {
+
+		boolean resultado = false;
+
+		BDDMockito.when(spotRepositoryMock.save(ArgumentMatchers.any())).thenReturn(spot);
+
+		resultado = envioAws.insertSpotPrice(spotAws, dataFormatada, "Russia");
+
+		Assertions.assertThat(resultado).isTrue();
+	}
+
+	@Test
+	@DisplayName("Insere PriceHistory - sucesso")
+	public void insertPriceHistory_Sucesso() {
+
+		boolean resultado = false;
+
+		PriceHistorySpot priceHistory = new PriceHistorySpot();
+
+		BDDMockito.when(historyRepositoryMock.save(ArgumentMatchers.any())).thenReturn(priceHistory);
+
+		resultado = envioAws.insertPricehistory(spot);
+
+		Assertions.assertThat(resultado).isTrue();
+	}
+
 	@Test
 	@DisplayName("Seleciona spot - sucesso")
 	public void selectSpot_Sucesso() {
@@ -67,41 +106,33 @@ class EnviarGoogleSpotTest extends SpotpriceApplicationTests{
 				ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString(),
 				ArgumentMatchers.anyString())).thenReturn(spot);
 
-		spotSalva = envioGoogle.selectSpotPrices("Google", "XF16", "Russia", "Descricao");
+		spotSalva = envioAws.selectSpotPrice(spotAws, "russia");
+		
+		System.out.println(spotSalva);
 
 		Assertions.assertThat(spotSalva).isNotNull();
 
 	}
 
-	
-	@Test
-	@DisplayName("Insere Spot - sucesso")
-	public void insertSpot_Sucesso() {
-		
-		boolean resultado = false;
+//	@Test
+//	@DisplayName("Seleciona priceHistory - sucesso")
+//	public void selectPriceHistory_Sucesso() {
+//
+//		PriceHistorySpot priceHistory = new PriceHistorySpot();
+//		
+//		PriceHistorySpot priceHistorySave = null;
+//
+//		BDDMockito.when(historyRepositoryMock.findBySelectUsingcodSpotAndpriceAnddataReq(ArgumentMatchers.anyLong(), 
+//				ArgumentMatchers.anyDouble(), ArgumentMatchers.anyString())).thenReturn(priceHistory);
+//		
+//		priceHistorySave = envioAws.selectPriceHistory(spot);
+//		
+//		System.out.println(priceHistorySave);
+//		
+//		Assertions.assertThat(priceHistorySave).isNotNull();
+//
+//	}
 
-		BDDMockito.when(spotRepositoryMock.save(ArgumentMatchers.any())).thenReturn(spot);
-
-		resultado = envioGoogle.insertSpotPrice(null, null, null, null, null, dataFormatada);
-
-		Assertions.assertThat(resultado).isTrue();
-	}
-	
-	@Test
-	@DisplayName("Insere PriceHistory - sucesso")
-	public void insertPriceHistory_Sucesso() {
-
-		PriceHistorySpot priceHistory = new PriceHistorySpot();
-		
-		boolean resultado = false;
-		
-		BDDMockito.when(historyRepositoryMock.save(ArgumentMatchers.any())).thenReturn(priceHistory);
-
-		resultado = envioGoogle.insertPriceHistory(spot);
-
-		Assertions.assertThat(resultado).isTrue();
-	}
-	
 	@Test
 	@DisplayName("Atualiza Spot - sucesso")
 	public void updateSpot_Sucesso() {
@@ -110,7 +141,7 @@ class EnviarGoogleSpotTest extends SpotpriceApplicationTests{
 
 		BDDMockito.when(spotRepositoryMock.save(ArgumentMatchers.any())).thenReturn(spot);
 
-		resultado = envioGoogle.updateSpotPrice(spot, new BigDecimal(0), dataFormatada);
+		resultado = envioAws.updateSpotPrice(spotAws, spot, dataFormatada);
 
 		Assertions.assertThat(resultado).isTrue();
 
@@ -118,7 +149,7 @@ class EnviarGoogleSpotTest extends SpotpriceApplicationTests{
 
 	
 	@Test
-	@DisplayName("Percorre as paginas da API da google, com instância existindo no banco de dados e priceHistory igual a NULL")
+	@DisplayName("Percorre as paginas da AWS, com instância existindo no banco de dados e priceHistory igual a NULL")
 	public void percorrerPagina_InstanciaExisteEHistoryNull_Sucesso() {
 		
 		BDDMockito.when(spotRepositoryMock.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription(
@@ -130,15 +161,18 @@ class EnviarGoogleSpotTest extends SpotpriceApplicationTests{
 		
 		BDDMockito.when(spotRepositoryMock.save(ArgumentMatchers.any())).thenReturn(spot);
 		
-		boolean resultado = envioGoogle.enviar();
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
+		DescribeRegionsResult regions_response = ec2.describeRegions();
+		
+		boolean resultado = envioAws.enviarParaBanco(regions_response.getRegions().get(0).getRegionName());
 		
 		Assertions.assertThat(resultado).isTrue();
 		
 		
 	}
-
+	
 	@Test
-	@DisplayName("Percorre as paginas da API da google, com instância não existindo no banco de dados")
+	@DisplayName("Percorre as paginas da AWS, com instância não existindo no banco de dados")
 	public void percorrerPagina_NaoExisteInstancia_Sucesso() {
 
 		BDDMockito.when(spotRepositoryMock.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription(
@@ -147,10 +181,13 @@ class EnviarGoogleSpotTest extends SpotpriceApplicationTests{
 
 		BDDMockito.when(spotRepositoryMock.save(ArgumentMatchers.any())).thenReturn(spot);
 
-		boolean resultado = envioGoogle.enviar();
+		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
+		DescribeRegionsResult regions_response = ec2.describeRegions();
+		
+		boolean resultado = envioAws.enviarParaBanco(regions_response.getRegions().get(0).getRegionName());
 
 		Assertions.assertThat(resultado).isTrue();
 
 	}
-
+	
 }

@@ -56,7 +56,7 @@ class EnviarAzureSpotTest extends SpotpriceApplicationTests {
 		spot.setProductDescription("Teste de produto");
 
 		instanceAzure = new InstanceAzure();
-
+		
 		instanceAzure.setSkuName("kf1");
 		instanceAzure.setLocation("russia");
 		instanceAzure.setProductName("Teste de produto");

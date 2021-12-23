@@ -47,7 +47,7 @@ public class EnviarGoogleSpot {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	// @Scheduled(fixedDelay = SEMANA)
+	//@Scheduled(fixedDelay = SEMANA)
 	public boolean enviar() {
 		
 		boolean enviado = false;
@@ -186,7 +186,7 @@ public class EnviarGoogleSpot {
 
 		System.out.println("Terminou GOOGLE");
 		return enviado;
-
+		
 	}
 
 	protected SpotPrices selectSpotPrices(String cloudName, String instanceType, String region,

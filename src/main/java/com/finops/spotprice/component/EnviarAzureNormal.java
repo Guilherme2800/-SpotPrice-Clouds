@@ -46,7 +46,7 @@ public class EnviarAzureNormal {
 	@Autowired
 	private SpotRepository spotRepository;
 
-	// @Scheduled(fixedDelay = SEMANA)
+	//@Scheduled(fixedDelay = SEMANA)
 	public boolean enviar() {
 
 		boolean enviado = false;
@@ -84,14 +84,8 @@ public class EnviarAzureNormal {
 
 					} else {
 
-						List<SpotPrices> spotPrices = spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregion(
-								"AZURE", spotAzure.getSkuName(), spotAzure.getLocation());
-
-						if (spotPrices != null) {
 							// Se não existir, insere os dados na tabela
 							insertInstancePrice(spotAzure, dataFormatada);
-						}
-
 					}
 
 				}

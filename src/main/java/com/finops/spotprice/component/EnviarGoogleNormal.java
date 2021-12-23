@@ -43,7 +43,7 @@ public class EnviarGoogleNormal {
 	@Autowired
 	private InstanceNormalRepository instanceRepository;
 
-	// @Scheduled(fixedDelay = SEMANA)
+	//@Scheduled(fixedDelay = SEMANA)
 	public boolean enviar() {
 
 		boolean enviado = false;
@@ -153,15 +153,10 @@ public class EnviarGoogleNormal {
 
 									} else {
 										// Se o dado não existir, insere ele no banco de dados
-
-										List<SpotPrices> spotPrices = spotRepository
-												.findBySelectUsingcloudNameAndinstanceTypeAndregion("GOOGLE",
-														instanceType, region);
-
-										if (spotPrices != null) {
+										
 											insertInstancePrice("GOOGLE", instanceType, region, productDescription,
 													preco, sdf.format(data));
-										}
+										
 
 									}
 
