@@ -3,7 +3,7 @@ package com.finops.spotprice.model;
 import lombok.Data;
 
 @Data
-public class SpotAzure {
+public class InstanceAzure {
 
 	private String location;
 

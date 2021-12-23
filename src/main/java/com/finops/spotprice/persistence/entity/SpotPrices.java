@@ -43,5 +43,12 @@ public class SpotPrices {
 	@ApiModelProperty("Data de requisição do preço.")
 	@Column(name = "data_req")
 	private String dataReq;
+
+	
+	
+	
+	
 	
 }
+
+

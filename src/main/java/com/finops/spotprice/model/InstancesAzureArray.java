@@ -6,7 +6,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class SpotAzureArray {
+public class InstancesAzureArray {
 	
 	private String billingCurrency;
 	private String CustomerEntityId;	
@@ -14,6 +14,6 @@ public class SpotAzureArray {
 	private String NextPageLink;	
 	private int Count;
 	
-	public List<SpotAzure> Items = new ArrayList<SpotAzure>();
+	public List<InstanceAzure> Items = new ArrayList<InstanceAzure>();
 	
 }

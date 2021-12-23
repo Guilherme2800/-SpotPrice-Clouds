@@ -1,4 +1,4 @@
-package com.finops.spotprice.model;
+package com.finops.spotprice.component;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -44,9 +44,10 @@ public class EnviarAwsSpot {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-	// @Scheduled(fixedDelay = DIA)
+	
+	//@Scheduled(fixedDelay = DIA)
 	public void correrRegioes() {
-
+		
 		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
 		DescribeRegionsResult regions_response = ec2.describeRegions();
 
@@ -61,12 +62,14 @@ public class EnviarAwsSpot {
 		System.out.println("Finalizado Envio da AWS...");
 	}
 
-	private void enviarParaBanco(String regiao) {
+	protected boolean enviarParaBanco(String regiao) {
 
-		boolean proximo = true;
+		boolean enviado = false;
 		
+		boolean proximo = true;
+	
 		SpotPrices spotPrices;
-
+		
 		// Instancia o cliente AWS na região especificada
 		AmazonEC2 client = AmazonEC2ClientBuilder.standard().withRegion(regiao).build();
 		DescribeSpotPriceHistoryRequest request;
@@ -88,15 +91,15 @@ public class EnviarAwsSpot {
 
 			// Esse While controla se tem uma proxima pagina de dados a carregar
 			while (proximo) {
-
+				
 				// percorre o array de instancias da AWS
 				for (SpotPrice spotAws : arrayInstanciasAws.getSpotPriceHistory()) {
 
 					spotPrices = null;
-					String dataSpotFormadata = sdf.format(spotAws.getTimestamp());
+					String dataFormadata = sdf.format(spotAws.getTimestamp());
 
 					// verifica se já existe esse dado no banco de dados
-					spotPrices = selectSpotPrices(spotAws, regiao);
+					spotPrices = selectSpotPrice(spotAws, regiao);
 
 					// Se o dado já estar no banco de dados, entra no IF
 					if (spotPrices != null) {
@@ -110,13 +113,13 @@ public class EnviarAwsSpot {
 							insertPricehistory(spotPrices);
 
 							// Atualiza o dado atual na tabela SpotPrices com a nova data e preco 
-							updateSpotPrices(spotAws, spotPrices, dataSpotFormadata);
+							updateSpotPrice(spotAws, spotPrices, dataFormadata);
 
 						}
 
 					} else {
 						// Se o dado não existir, insere ele no banco de dados na tabela spotPrices
-						insertSpotPrices(spotAws, dataSpotFormadata, regiao);
+						insertSpotPrice(spotAws, dataFormadata, regiao);
 					}
 
 				}
@@ -129,14 +132,18 @@ public class EnviarAwsSpot {
 				arrayInstanciasAws = client.describeSpotPriceHistory(request);
 
 			}
-
+			
+			enviado = true;
+			
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		return enviado;
 	}
 
-	protected SpotPrices selectSpotPrices(SpotPrice spotAws, String regiao) {
+	protected SpotPrices selectSpotPrice(SpotPrice spotAws, String regiao) {
 
 		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AWS",
 				spotAws.getInstanceType(), regiao, spotAws.getProductDescription());
@@ -150,31 +157,30 @@ public class EnviarAwsSpot {
 
 	}
 
-	protected void insertPricehistory(SpotPrices spotPrices) {
+	protected boolean insertPricehistory(SpotPrices spotPrices) {
 
+		boolean salvoSucesso = false;
+		
 		PriceHistorySpot priceHistory = new PriceHistorySpot();
 
 		priceHistory.setCodSpot(spotPrices.getCod_spot());
 		priceHistory.setPrice(spotPrices.getPrice().doubleValue());
 		priceHistory.setDataReq(spotPrices.getDataReq());
 
-		priceHistoryRepository.save(priceHistory);
+		PriceHistorySpot historySalvo = priceHistoryRepository.save(priceHistory);
 
-	}
+		if (historySalvo != null) {
+			salvoSucesso = true;
+		}
 
-	protected void updateSpotPrices(SpotPrice spotAws, SpotPrices spotPrices, String dataSpotFormatada) {
-
-		BigDecimal preco = new BigDecimal(Double.parseDouble(spotAws.getSpotPrice())).setScale(5,BigDecimal.ROUND_HALF_UP);
+		return salvoSucesso;
 		
-		spotPrices.setPrice(preco);
-		spotPrices.setDataReq(dataSpotFormatada);
-
-		spotRepository.save(spotPrices);
-
 	}
 
-	protected void insertSpotPrices(SpotPrice spotAws, String dataSpotFormatada, String regiao) {
+	protected boolean insertSpotPrice(SpotPrice spotAws, String dataFormatada, String regiao) {
 
+		boolean salvoSucesso = false;
+		
 		BigDecimal preco = new BigDecimal(Double.parseDouble(spotAws.getSpotPrice())).setScale(5,BigDecimal.ROUND_HALF_UP);
 		
 		SpotPrices newSpotPrice = new SpotPrices();
@@ -183,10 +189,37 @@ public class EnviarAwsSpot {
 		newSpotPrice.setRegion(regiao);
 		newSpotPrice.setProductDescription(spotAws.getProductDescription());
 		newSpotPrice.setPrice(preco);
-		newSpotPrice.setDataReq(dataSpotFormatada);
+		newSpotPrice.setDataReq(dataFormatada);
 
-		spotRepository.save(newSpotPrice);
+		SpotPrices spotSalva = spotRepository.save(newSpotPrice);
+
+		if (spotSalva != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
+		
+	}
+	
+	protected boolean updateSpotPrice(SpotPrice spotAws, SpotPrices spotPrices, String dataFormatada) {
+
+		boolean salvoSucesso = false;
+		
+		BigDecimal preco = new BigDecimal(Double.parseDouble(spotAws.getSpotPrice())).setScale(5,BigDecimal.ROUND_HALF_UP);
+		
+		spotPrices.setPrice(preco);
+		spotPrices.setDataReq(dataFormatada);
+
+		SpotPrices spotSalva = spotRepository.save(spotPrices);
+		
+		if (spotSalva != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
 
 	}
+
+	
 
 }

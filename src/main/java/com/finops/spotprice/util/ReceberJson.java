@@ -1,4 +1,4 @@
-package com.finops.spotprice.service;
+package com.finops.spotprice.util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +13,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-@Service
+
 public class ReceberJson {
 
 	public JsonObject requisitarJson(String site) {

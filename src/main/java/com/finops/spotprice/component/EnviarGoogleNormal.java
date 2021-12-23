@@ -1,4 +1,4 @@
-package com.finops.spotprice.model;
+package com.finops.spotprice.component;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -21,7 +21,7 @@ import com.finops.spotprice.persistence.entity.InstanceNormalPrice;
 import com.finops.spotprice.persistence.entity.SpotPrices;
 import com.finops.spotprice.persistence.repository.InstanceNormalRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
-import com.finops.spotprice.service.ReceberJson;
+import com.finops.spotprice.util.ReceberJson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -43,9 +43,11 @@ public class EnviarGoogleNormal {
 	@Autowired
 	private InstanceNormalRepository instanceRepository;
 
-	// @Scheduled(fixedDelay = SEMANA)
-	public void enviar() {
+	//@Scheduled(fixedDelay = SEMANA)
+	public boolean enviar() {
 
+		boolean enviado = false;
+		
 		// Pega a data atual
 		Date data = new Date(System.currentTimeMillis());
 
@@ -112,7 +114,7 @@ public class EnviarGoogleNormal {
 
 						if (matcher.find()) {
 							// Pega o conteúdo entre aspas a partir de uma string
-
+							
 							// ------- instace REGION------
 							region = matcher.group(1);
 
@@ -151,15 +153,10 @@ public class EnviarGoogleNormal {
 
 									} else {
 										// Se o dado não existir, insere ele no banco de dados
-
-										List<SpotPrices> spotPrices = spotRepository
-												.findBySelectUsingcloudNameAndinstanceTypeAndregion("GOOGLE",
-														instanceType, region);
-
-										if (spotPrices != null) {
+										
 											insertInstancePrice("GOOGLE", instanceType, region, productDescription,
 													preco, sdf.format(data));
-										}
+										
 
 									}
 
@@ -174,33 +171,46 @@ public class EnviarGoogleNormal {
 				}
 
 			}
+			
+			enviado = true;
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		System.out.println("Terminou GOOGLE");
-
+		return enviado;
 	}
 
 	protected InstanceNormalPrice selectInstancePrice(String cloudName, String instanceType, String region,
 			String productDescription) {
-
+		
 		return instanceRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("GOOGLE",
 				instanceType, region, productDescription);
 	}
 
-	protected void updateInstancePrice(InstanceNormalPrice instanceNormal, BigDecimal unitPrice,
+	protected boolean updateInstancePrice(InstanceNormalPrice instanceNormal, BigDecimal unitPrice,
 			String dataSpotFormatada) {
+		
+		boolean salvoSucesso = false;
+		
 		instanceNormal.setPrice(unitPrice);
 		instanceNormal.setDataReq(dataSpotFormatada);
 
-		instanceRepository.save(instanceNormal);
+		InstanceNormalPrice instanceSave = instanceRepository.save(instanceNormal);
+		
+		if (instanceSave != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
 	}
 
-	protected void insertInstancePrice(String cloudName, String instanceType, String region, String productDescription,
+	protected boolean insertInstancePrice(String cloudName, String instanceType, String region, String productDescription,
 			BigDecimal unitPrice, String dataSpotFormatada) {
 
+		boolean salvoSucesso = false;
+		
 		InstanceNormalPrice instanceNormal = new InstanceNormalPrice();
 		instanceNormal.setCloudName("GOOGLE");
 		instanceNormal.setInstanceType(instanceType);
@@ -209,7 +219,13 @@ public class EnviarGoogleNormal {
 		instanceNormal.setPrice(unitPrice);
 		instanceNormal.setDataReq(dataSpotFormatada);
 
-		instanceRepository.save(instanceNormal);
+		InstanceNormalPrice instanceSave = instanceRepository.save(instanceNormal);
+		
+		if (instanceSave != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
 
 	}
 
