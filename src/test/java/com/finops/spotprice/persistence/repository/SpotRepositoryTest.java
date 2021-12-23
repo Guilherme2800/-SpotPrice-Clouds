@@ -15,7 +15,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import com.finops.spotprice.persistence.entity.SpotPrices;
 
 @DataJpaTest
-@DisplayName("Teste para spotPrice repository")
 class SpotRepositoryTest {
 
 	@Autowired

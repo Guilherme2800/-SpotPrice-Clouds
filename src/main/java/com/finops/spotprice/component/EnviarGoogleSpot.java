@@ -40,7 +40,7 @@ public class EnviarGoogleSpot {
 	private final long SEMANA = DIA * 7;
 
 	final String URL = "https://cloudpricingcalculator.appspot.com/static/data/pricelist.json?v=1638364907294";
-
+	
 	@Autowired
 	private SpotRepository spotRepository;
 
@@ -48,7 +48,9 @@ public class EnviarGoogleSpot {
 	private PriceHistoryRepository priceHistoryRepository;
 
 	// @Scheduled(fixedDelay = SEMANA)
-	public void enviar() {
+	public boolean enviar() {
+		
+		boolean enviado = false;
 
 		// Pega a data atual
 		Date data = new Date(System.currentTimeMillis());
@@ -86,7 +88,7 @@ public class EnviarGoogleSpot {
 					if (instancia.getKey().contains("VMIMAGE")) {
 						productDescription = productDescription.toLowerCase() + "-vmimage";
 					}
-
+					
 					// -----Tipo da instância-----
 					String instanceType = instancia.getKey().replaceAll("CP-COMPUTEENGINE-", "")
 							.replaceAll("VMIMAGE-", "").replaceAll("-PREEMPTIBLE", "").replaceAll("-", " ")
@@ -105,7 +107,7 @@ public class EnviarGoogleSpot {
 						if (linhaAtual.contains("}")) {
 							continuar = false;
 						}
-
+						
 						linhaAtual = linhaAtual.replaceAll("}", "");
 
 						String regex = "\"([^\"]*)\""; // regex com um grupo entre aspas
@@ -154,12 +156,12 @@ public class EnviarGoogleSpot {
 											insertPriceHistory(spotPrices);
 
 											// Atualiza o dado atual do spotPrices com a nova data e preco
-											updateSpotPrices(spotPrices, preco, sdf.format(data));
+											updateSpotPrice(spotPrices, preco, sdf.format(data));
 										}
 									} else {
 										// Se o dado não existir, insere ele no banco de dados
 
-										insertSpotprices("GOOGLE", instanceType, region, productDescription, preco,
+										insertSpotPrice("GOOGLE", instanceType, region, productDescription, preco,
 												sdf.format(data));
 
 									}
@@ -176,11 +178,14 @@ public class EnviarGoogleSpot {
 
 			}
 
+			enviado = true;
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		System.out.println("Terminou GOOGLE");
+		return enviado;
 
 	}
 
@@ -198,37 +203,64 @@ public class EnviarGoogleSpot {
 
 	}
 
-	protected void insertPriceHistory(SpotPrices spotPrices) {
+	protected boolean insertPriceHistory(SpotPrices spotPrices) {
 
+		boolean salvoSucesso = false;
+		
 		PriceHistorySpot priceHistory = new PriceHistorySpot();
 
 		priceHistory.setCodSpot(spotPrices.getCod_spot());
 		priceHistory.setPrice(spotPrices.getPrice().doubleValue());
 		priceHistory.setDataReq(spotPrices.getDataReq());
 
-		priceHistoryRepository.save(priceHistory);
+		PriceHistorySpot historySalvo = priceHistoryRepository.save(priceHistory);
+		
+		if (historySalvo != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
+		
 	}
 
-	protected void updateSpotPrices(SpotPrices spotPrices, BigDecimal unitPrice, String dataSpotFormatada) {
+	protected boolean updateSpotPrice(SpotPrices spotPrices, BigDecimal unitPrice, String dataFormatada) {
+		
+		boolean salvoSucesso = false;
+		
 		spotPrices.setPrice(unitPrice);
-		spotPrices.setDataReq(dataSpotFormatada);
+		spotPrices.setDataReq(dataFormatada);
 
-		spotRepository.save(spotPrices);
+		SpotPrices spotSalva = spotRepository.save(spotPrices);
+		
+		if (spotSalva != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
+		
 	}
+	
+	protected boolean insertSpotPrice(String cloudName, String instanceType, String region, String productDescription,
+			BigDecimal unitPrice, String dataFormatada) {
 
-	protected void insertSpotprices(String cloudName, String instanceType, String region, String productDescription,
-			BigDecimal unitPrice, String dataSpotFormatada) {
-
+		boolean salvoSucesso = false;
+		
 		SpotPrices newSpotPrice = new SpotPrices();
 		newSpotPrice.setCloudName("GOOGLE");
 		newSpotPrice.setInstanceType(instanceType);
 		newSpotPrice.setRegion(region);
 		newSpotPrice.setProductDescription(productDescription);
 		newSpotPrice.setPrice(unitPrice);
-		newSpotPrice.setDataReq(dataSpotFormatada);
+		newSpotPrice.setDataReq(dataFormatada);
 
-		spotRepository.save(newSpotPrice);
+		SpotPrices spotSalva = spotRepository.save(newSpotPrice);
 
+		if (spotSalva != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
+		
 	}
 
 }

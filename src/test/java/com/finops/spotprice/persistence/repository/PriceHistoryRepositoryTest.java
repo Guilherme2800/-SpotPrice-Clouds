@@ -12,7 +12,6 @@ import com.finops.spotprice.persistence.entity.PriceHistorySpot;
 
 
 @DataJpaTest
-@DisplayName("Teste para PriceHistory repository")
 class PriceHistoryRepositoryTest {
 
 	@Autowired

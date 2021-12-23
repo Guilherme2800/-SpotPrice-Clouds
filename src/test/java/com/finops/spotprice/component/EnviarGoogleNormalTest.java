@@ -20,19 +20,16 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.finops.spotprice.SpotpriceApplicationTests;
-import com.finops.spotprice.model.InstanceAzure;
-import com.finops.spotprice.model.InstancesAzureArray;
 import com.finops.spotprice.persistence.entity.InstanceNormalPrice;
 import com.finops.spotprice.persistence.entity.SpotPrices;
 import com.finops.spotprice.persistence.repository.InstanceNormalRepository;
 import com.finops.spotprice.persistence.repository.SpotRepository;
-import com.finops.spotprice.util.JsonForObjectAzure;
 
 @ExtendWith(SpringExtension.class)
-class EnviarAzureNormalTest extends SpotpriceApplicationTests {
+class EnviarGoogleNormalTest extends SpotpriceApplicationTests{
 
 	@InjectMocks
-	private EnviarAzureNormal envioAzure = new EnviarAzureNormal();
+	private EnviarGoogleNormal envioGoogle = new EnviarGoogleNormal();
 
 	@Mock
 	private InstanceNormalRepository instanceRepositoryMock;
@@ -41,9 +38,9 @@ class EnviarAzureNormalTest extends SpotpriceApplicationTests {
 	private SpotRepository spotRepositoryMock;
 
 	InstanceNormalPrice instanceNormal;
-	InstanceAzure instanceAzure;
 
-	String dataSpotFormatada;
+
+	String dataFormatada;
 	
 	@BeforeEach
 	void setUp() {
@@ -57,20 +54,12 @@ class EnviarAzureNormalTest extends SpotpriceApplicationTests {
 		instanceNormal.setRegion("russia");
 		instanceNormal.setProductDescription("Teste de produto");
 
-		instanceAzure = new InstanceAzure();
-
-		instanceAzure.setSkuName("kf1");
-		instanceAzure.setLocation("russia");
-		instanceAzure.setProductName("Teste de produto");
-		instanceAzure.setUnitPrice(5.33);
-		instanceAzure.setEffectiveStartDate("2021-10-01T00:00:00Z");
-
 		// Formata a data
 		DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
-		OffsetDateTime dataSpot = OffsetDateTime.parse(instanceAzure.getEffectiveStartDate());
-		dataSpotFormatada = dataSpot.format(formatarPadrao);
+		OffsetDateTime dataSpot = OffsetDateTime.parse("2021-10-01T00:00:00Z");
+		dataFormatada = dataSpot.format(formatarPadrao);
 	}
-
+	
 	@Test
 	@DisplayName("Inserir instancia normal - Sucesso")
 	public void insertInstanceNormal_Sucesso() {
@@ -79,7 +68,7 @@ class EnviarAzureNormalTest extends SpotpriceApplicationTests {
 
 		BDDMockito.when(instanceRepositoryMock.save(ArgumentMatchers.any())).thenReturn(instanceNormal);
 
-		resultado = envioAzure.insertInstancePrice(instanceAzure, dataSpotFormatada);
+		resultado = envioGoogle.insertInstancePrice(null, null, null, null, null, dataFormatada);
 
 		Assertions.assertThat(resultado).isTrue();
 	}
@@ -92,7 +81,7 @@ class EnviarAzureNormalTest extends SpotpriceApplicationTests {
 
 		BDDMockito.when(instanceRepositoryMock.save(ArgumentMatchers.any())).thenReturn(instanceNormal);
 
-		resultado = envioAzure.updateInstancePrice(instanceAzure, instanceNormal, dataSpotFormatada);
+		resultado = envioGoogle.updateInstancePrice(instanceNormal, new BigDecimal(0), dataFormatada);
 
 		Assertions.assertThat(resultado).isTrue();
 
@@ -108,27 +97,15 @@ class EnviarAzureNormalTest extends SpotpriceApplicationTests {
 				ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString(),
 				ArgumentMatchers.anyString())).thenReturn(instanceNormal);
 
-		instance = envioAzure.selectInstancePrice(instanceAzure);
+		instance = envioGoogle.selectInstancePrice("Google", "XF16", "Russia", "Descricao");
 
 		Assertions.assertThat(instance).isNotNull();
 
 	}
-
-	@Test
-	@DisplayName("Solicitar Array de instâncias Azure - sucesso")
-	public void solicitarArrayAzure_Sucesso() {
-
-		InstancesAzureArray azureArray;
-
-		azureArray = envioAzure.solicitarObjetoAzure(
-				"https://prices.azure.com/api/retail/prices?$skip=0&$filter=serviceName%20eq%20%27Virtual%20Machines%27%20and%20priceType%20eq%20%27Consumption%27");
-
-		Assertions.assertThat(azureArray).isNotNull();
-	}
 	
 	@Test
-	@DisplayName("Percorre as paginas da API da azure, com instância já existindo no banco de dados - sucesso")
-	public void percorrerPagina_InstanciaExiste_Sucesso() {
+	@DisplayName("Percorre as paginas da API da google, com instância já existindo no banco de dados - sucesso")
+	public void percorrerPaginaInstanciaExiste_Sucesso() {
 		
 		BDDMockito.when(instanceRepositoryMock.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription(
 				ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString(),
@@ -136,7 +113,7 @@ class EnviarAzureNormalTest extends SpotpriceApplicationTests {
 		
 		BDDMockito.when(instanceRepositoryMock.save(ArgumentMatchers.any())).thenReturn(instanceNormal);
 		
-		boolean resultado = envioAzure.enviar();
+		boolean resultado = envioGoogle.enviar();
 		
 		Assertions.assertThat(resultado).isTrue();
 		
@@ -144,11 +121,11 @@ class EnviarAzureNormalTest extends SpotpriceApplicationTests {
 	}
 	
 	@Test
-	@DisplayName("Percorre as paginas da API da azure, com instâncias não existindo no banco de dados - sucesso")
-	public void percorrerPagina_NaoExisteInstancia_Sucesso() {
+	@DisplayName("Percorre as paginas da API da google, com instâncias não existindo no banco de dados - sucesso")
+	public void percorrerPaginaNaoExisteInstancia_Sucesso() {
 		
 		SpotPrices spot = new SpotPrices();
-		spot.setCloudName("AWS");
+		spot.setCloudName("Google");
 		
 		List<SpotPrices> spotList = new ArrayList<SpotPrices>();
 		spotList.add(spot);
@@ -161,10 +138,11 @@ class EnviarAzureNormalTest extends SpotpriceApplicationTests {
 		
 		BDDMockito.when(instanceRepositoryMock.save(ArgumentMatchers.any())).thenReturn(instanceNormal);
 		
-		boolean resultado = envioAzure.enviar();
+		boolean resultado = envioGoogle.enviar();
 		
 		Assertions.assertThat(resultado).isTrue();
 		
 		
 	}
+
 }

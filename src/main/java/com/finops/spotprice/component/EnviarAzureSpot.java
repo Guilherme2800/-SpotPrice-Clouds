@@ -43,8 +43,10 @@ public class EnviarAzureSpot {
 	@Autowired
 	private PriceHistoryRepository priceHistoryRepository;
 
-    // @Scheduled(fixedDelay = SEMANA)
-	public void enviar() {
+	// @Scheduled(fixedDelay = SEMANA)
+	public boolean enviar() {
+
+		boolean enviado = false;
 
 		SpotPrices spotPrices;
 
@@ -65,31 +67,31 @@ public class EnviarAzureSpot {
 					// Formata a data
 					DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
 					OffsetDateTime dataSpot = OffsetDateTime.parse(spotAzure.getEffectiveStartDate());
-					String dataSpotFormatada = dataSpot.format(formatarPadrao);
-					
+					String dataFormatada = dataSpot.format(formatarPadrao);
+
 					// verificar se já existe esse dado no banco de dados
-					spotPrices = selectSpotPrices(spotAzure);
+					spotPrices = selectSpotPrice(spotAzure);
 
 					// Se o dado já estar no banco de dados, entra no IF
 					if (spotPrices != null) {
-						
+
 						PriceHistorySpot priceHistory = selectPriceHistory(spotPrices);
 
 						// Se o dado não estiver já em priceHistory, entra no IF
 						if (priceHistory == null) {
-						
-						// Insere o dado atual na tabela de historico
-						insertPricehistory(spotPrices);
-						
-						// Atualiza o dado atual do spotPrices com a nova data e preco
-						updateSpotPrices(spotAzure, spotPrices, dataSpotFormatada);
-						
+
+							// Insere o dado atual na tabela de historico
+							insertPricehistory(spotPrices);
+
+							// Atualiza o dado atual do spotPrices com a nova data e preco
+							updateSpotPrice(spotAzure, spotPrices, dataFormatada);
+
 						}
-						
+
 					} else {
-						
+
 						// Se o dado não existir, insere ele no banco de dados
-						insertSpotPrices(spotAzure, dataSpotFormatada);
+						insertSpotPrice(spotAzure, dataFormatada);
 
 					}
 
@@ -100,16 +102,18 @@ public class EnviarAzureSpot {
 			// Controle se a existe uma proxima pagina
 			if (azureSpot.getCount() < 100) {
 				proximo = false;
+				enviado = true;
 			} else if (azureSpot.getNextPageLink() != null) {
-				
 				azureSpot = solicitarObjetoAzure(azureSpot.getNextPageLink());
 			} else {
 				proximo = false;
+				enviado = true;
 			}
 		}
-		
+
 		System.out.println("Azure enviada.");
-		
+		return enviado;
+
 	}
 
 	protected InstancesAzureArray solicitarObjetoAzure(String URL) {
@@ -122,10 +126,10 @@ public class EnviarAzureSpot {
 		return azureArrayObject;
 	}
 
-	protected SpotPrices selectSpotPrices(InstanceAzure spotAzure) {
+	protected SpotPrices selectSpotPrice(InstanceAzure spotAzure) {
 
-		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",spotAzure.getSkuName().replaceAll(" Spot", ""),
-				spotAzure.getLocation(), spotAzure.getProductName());
+		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",
+				spotAzure.getSkuName().replaceAll(" Spot", ""), spotAzure.getLocation(), spotAzure.getProductName());
 
 	}
 	
@@ -133,10 +137,12 @@ public class EnviarAzureSpot {
 
 		return priceHistoryRepository.findBySelectUsingcodSpotAndpriceAnddataReq(spotPrices.getCod_spot(),
 				spotPrices.getPrice().doubleValue(), spotPrices.getDataReq());
-
+		
 	}
 
-	protected void insertPricehistory(SpotPrices spotPrices) {
+	protected boolean insertPricehistory(SpotPrices spotPrices) {
+
+		boolean salvoSucesso = false;
 
 		PriceHistorySpot priceHistory = new PriceHistorySpot();
 
@@ -144,24 +150,40 @@ public class EnviarAzureSpot {
 		priceHistory.setPrice(spotPrices.getPrice().doubleValue());
 		priceHistory.setDataReq(spotPrices.getDataReq());
 
-		priceHistoryRepository.save(priceHistory);
+		PriceHistorySpot historySalvo = priceHistoryRepository.save(priceHistory);
+
+		if (historySalvo != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
 
 	}
 
-	protected void updateSpotPrices(InstanceAzure spotAzure, SpotPrices spotPrices, String dataSpotFormatada) {
+	protected boolean updateSpotPrice(InstanceAzure spotAzure, SpotPrices spotPrices, String dataSpotFormatada) {
 
-		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5,BigDecimal.ROUND_HALF_UP);
-		
+		boolean salvoSucesso = false;
+
+		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
+
 		spotPrices.setPrice(preco);
 		spotPrices.setDataReq(dataSpotFormatada);
 
-		spotRepository.save(spotPrices);
+		SpotPrices spotSalva = spotRepository.save(spotPrices);
+
+		if (spotSalva != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
 
 	}
 
-	protected void insertSpotPrices(InstanceAzure spotAzure, String dataSpotFormatada) {
-		
-		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5,BigDecimal.ROUND_HALF_UP);
+	protected boolean insertSpotPrice(InstanceAzure spotAzure, String dataSpotFormatada) {
+
+		boolean salvoSucesso = false;
+
+		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
 
 		SpotPrices newSpotPrice = new SpotPrices();
 		newSpotPrice.setCloudName("AZURE");
@@ -171,8 +193,13 @@ public class EnviarAzureSpot {
 		newSpotPrice.setPrice(preco);
 		newSpotPrice.setDataReq(dataSpotFormatada);
 
-		spotRepository.save(newSpotPrice);
+		SpotPrices spotSalva = spotRepository.save(newSpotPrice);
 
+		if (spotSalva != null) {
+			salvoSucesso = true;
+		}
+
+		return salvoSucesso;
 	}
 
 }

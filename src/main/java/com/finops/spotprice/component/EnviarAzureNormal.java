@@ -71,7 +71,7 @@ public class EnviarAzureNormal {
 					// Formata a data
 					DateTimeFormatter formatarPadrao = DateTimeFormatter.ofPattern("uuuu/MM/dd");
 					OffsetDateTime dataSpot = OffsetDateTime.parse(spotAzure.getEffectiveStartDate());
-					String dataSpotFormatada = dataSpot.format(formatarPadrao);
+					String dataFormatada = dataSpot.format(formatarPadrao);
 
 					// verificar se já existe esse dado no banco de dados
 					instanceNormal = selectInstancePrice(spotAzure);
@@ -80,7 +80,7 @@ public class EnviarAzureNormal {
 					if (instanceNormal != null) {
 
 						// Atualiza o valor e data da requisição
-						updateInstancePrice(spotAzure, instanceNormal, dataSpotFormatada);
+						updateInstancePrice(spotAzure, instanceNormal, dataFormatada);
 
 					} else {
 
@@ -89,7 +89,7 @@ public class EnviarAzureNormal {
 
 						if (spotPrices != null) {
 							// Se não existir, insere os dados na tabela
-							insertInstancePrice(spotAzure, dataSpotFormatada);
+							insertInstancePrice(spotAzure, dataFormatada);
 						}
 
 					}
@@ -114,7 +114,7 @@ public class EnviarAzureNormal {
 		return enviado;
 
 	}
-
+	
 	protected InstancesAzureArray solicitarObjetoAzure(String URL) {
 
 		// Instancia o objeto que vai converter o JSON para objeto
@@ -133,14 +133,14 @@ public class EnviarAzureNormal {
 	}
 
 	protected boolean updateInstancePrice(InstanceAzure spotAzure, InstanceNormalPrice instanceNormal,
-			String dataSpotFormatada) {
+			String dataFormatada) {
 
 		boolean salvoSucesso = false;
 
 		BigDecimal preco = new BigDecimal(spotAzure.getUnitPrice()).setScale(5, BigDecimal.ROUND_HALF_UP);
 
 		instanceNormal.setPrice(preco);
-		instanceNormal.setDataReq(dataSpotFormatada);
+		instanceNormal.setDataReq(dataFormatada);
 
 		InstanceNormalPrice instanceSave = instanceRepository.save(instanceNormal);
 		if (instanceSave != null) {
@@ -151,7 +151,7 @@ public class EnviarAzureNormal {
 
 	}
 
-	protected boolean insertInstancePrice(InstanceAzure spotAzure, String dataSpotFormatada) {
+	protected boolean insertInstancePrice(InstanceAzure spotAzure, String dataFormatada) {
 
 		boolean salvoSucesso = false;
 
@@ -163,7 +163,7 @@ public class EnviarAzureNormal {
 		instanceNormal.setRegion(spotAzure.getLocation());
 		instanceNormal.setProductDescription(spotAzure.getProductName());
 		instanceNormal.setPrice(preco);
-		instanceNormal.setDataReq(dataSpotFormatada);
+		instanceNormal.setDataReq(dataFormatada);
 
 		InstanceNormalPrice instanceSave = instanceRepository.save(instanceNormal);
 
