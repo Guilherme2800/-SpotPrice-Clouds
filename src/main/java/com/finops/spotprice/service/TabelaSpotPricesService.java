@@ -1,6 +1,5 @@
 package com.finops.spotprice.service;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,11 +21,15 @@ public class TabelaSpotPricesService {
 	@Autowired
 	InstanceNormalRepository instanceRepository;
 
+	// Método que retorna para o controller a lista de instâncias a partir do filtro
+	// inserido
 	public Iterable<EstruturaTabela> listarInstancias(String cloud, String region, String instanceType) {
 
 		Iterable<SpotPrices> spotIt = null;
 		Iterable<EstruturaTabela> tabelaIt = null;
 
+		// Cada IF verifica os filtros inseridos e chama o método que procura a
+		// instância sob demanda das SPOTs
 		if (cloud.length() != 0 && region.length() != 0 && instanceType.length() != 0) {
 			spotIt = spotRepository.findBycloudNameAndRegionAndInstanceType(cloud, region, instanceType);
 			return adicionarInstanciasNormais(spotIt);
@@ -39,6 +42,11 @@ public class TabelaSpotPricesService {
 
 		if (cloud.length() != 0 && instanceType.length() != 0) {
 			spotIt = spotRepository.findBycloudNameAndInstanceType(cloud, instanceType);
+			return adicionarInstanciasNormais(spotIt);
+		}
+
+		if (region.length() != 0 && instanceType.length() != 0) {
+			spotIt = spotRepository.findByinstanceTypeAndRegion(instanceType, region);
 			return adicionarInstanciasNormais(spotIt);
 		}
 
@@ -62,20 +70,27 @@ public class TabelaSpotPricesService {
 
 	private Iterable<EstruturaTabela> adicionarInstanciasNormais(Iterable<SpotPrices> spotIt) {
 
-		List<InstanceNormalPrice> instanceNormal = instanceRepository.findAll();
+		// Recebe a lista de instancias sob demanda
+		List<InstanceNormalPrice> instanceNormalList = instanceRepository.findAll();
+		
+		// Define a lista que contém a estrutura da tabela
 		List<EstruturaTabela> estruturaTabelaList = new ArrayList<EstruturaTabela>();
 
+		// Tabela final
 		Iterable<EstruturaTabela> tabelaIt = null;
 
+		// Percorre todas as instâncias SPOT.
 		for (SpotPrices spotPrices : spotIt) {
 
 			boolean possuiInstanceNormal = false;
+			System.out.println(spotPrices);
+			// Percorre a lista de instâncias Sob demanda
+			for (InstanceNormalPrice instanceNormalPrice : instanceNormalList) {
 
-			for (InstanceNormalPrice instanceNormalPrice : instanceNormal) {
-
+				// verifica se a SPOT contem os dados da instância sob demanda.
 				if (spotPrices.getCloudName().contains(instanceNormalPrice.getCloudName())
 						&& spotPrices.getInstanceType().contains(instanceNormalPrice.getInstanceType())
-						&& spotPrices.getRegion().contains(instanceNormalPrice.getRegion())
+						&& instanceNormalPrice.getRegion().contains(spotPrices.getRegion())
 						&& spotPrices.getProductDescription().contains(instanceNormalPrice.getProductDescription())) {
 
 					EstruturaTabela estruturaTabela = new EstruturaTabela();
@@ -84,10 +99,12 @@ public class TabelaSpotPricesService {
 					estruturaTabela.setInstanceType(spotPrices.getInstanceType());
 					estruturaTabela.setDataReq(spotPrices.getDataReq());
 					estruturaTabela.setProductDescription(spotPrices.getProductDescription());
-					estruturaTabela.setRegion(spotPrices.getRegion());
+					estruturaTabela.setRegion(instanceNormalPrice.getRegion());
 					estruturaTabela.setPriceSpot(spotPrices.getPrice());
 					estruturaTabela.setPriceNormal(instanceNormalPrice.getPrice());
 
+					System.out.println(estruturaTabela);
+					
 					estruturaTabelaList.add(estruturaTabela);
 
 					possuiInstanceNormal = true;
@@ -105,13 +122,14 @@ public class TabelaSpotPricesService {
 				estruturaTabela.setProductDescription(spotPrices.getProductDescription());
 				estruturaTabela.setRegion(spotPrices.getRegion());
 				estruturaTabela.setPriceSpot(spotPrices.getPrice());
-
+				
 				estruturaTabelaList.add(estruturaTabela);
 
 			}
 
 		}
 
+		// Recebe a tabela final
 		tabelaIt = estruturaTabelaList;
 
 		return tabelaIt;

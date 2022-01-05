@@ -42,7 +42,7 @@ public class EnviarAwsNormal {
 
 	String data;
 
-	@Scheduled(fixedDelay = SEMANA)
+	// @Scheduled(fixedDelay = SEMANA)
 	public void init() {
 
 		final String UrlPrincipal = "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/region_index.json";
