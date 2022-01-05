@@ -157,7 +157,6 @@ public class EnviarGoogleNormal {
 											insertInstancePrice("GOOGLE", instanceType, region, productDescription,
 													preco, sdf.format(data));
 										
-
 									}
 
 									// --------------------FIM ENVIO PARA O BANCO DE DADOS ----------------
@@ -190,12 +189,12 @@ public class EnviarGoogleNormal {
 	}
 
 	protected boolean updateInstancePrice(InstanceNormalPrice instanceNormal, BigDecimal unitPrice,
-			String dataSpotFormatada) {
+			String dataFormatada) {
 		
 		boolean salvoSucesso = false;
 		
 		instanceNormal.setPrice(unitPrice);
-		instanceNormal.setDataReq(dataSpotFormatada);
+		instanceNormal.setDataReq(dataFormatada);
 
 		InstanceNormalPrice instanceSave = instanceRepository.save(instanceNormal);
 		
