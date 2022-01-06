@@ -181,6 +181,8 @@ public class EnviarGoogleNormal {
 		return enviado;
 	}
 
+	// ------------ METODOS DE SQL --------
+	
 	protected InstanceNormalPrice selectInstancePrice(String cloudName, String instanceType, String region,
 			String productDescription) {
 		

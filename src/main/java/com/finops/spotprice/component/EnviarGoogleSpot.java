@@ -188,6 +188,8 @@ public class EnviarGoogleSpot {
 		return enviado;
 		
 	}
+	
+	// ------------ METODOS DE SQL --------
 
 	protected SpotPrices selectSpotPrices(String cloudName, String instanceType, String region,
 			String productDescription) {

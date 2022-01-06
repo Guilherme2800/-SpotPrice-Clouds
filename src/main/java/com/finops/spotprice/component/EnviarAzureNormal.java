@@ -119,6 +119,8 @@ public class EnviarAzureNormal {
 		return azureArrayObject;
 	}
 
+	// ------------ METODOS DE SQL --------
+	
 	protected InstanceNormalPrice selectInstancePrice(InstanceAzure spotAzure) {
 
 		return instanceRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AZURE",

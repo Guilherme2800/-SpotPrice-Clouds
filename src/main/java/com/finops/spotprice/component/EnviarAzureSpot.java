@@ -125,6 +125,8 @@ public class EnviarAzureSpot {
 
 		return azureArrayObject;
 	}
+	
+	// ------------ METODOS DE SQL --------
 
 	protected SpotPrices selectSpotPrice(InstanceAzure spotAzure) {
 

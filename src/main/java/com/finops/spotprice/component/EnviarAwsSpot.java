@@ -143,6 +143,8 @@ public class EnviarAwsSpot {
 		return enviado;
 	}
 
+	// ------------ METODOS DE SQL --------
+	
 	protected SpotPrices selectSpotPrice(SpotPrice spotAws, String regiao) {
 
 		return spotRepository.findBySelectUsingcloudNameAndinstanceTypeAndregionAndProductDescription("AWS",

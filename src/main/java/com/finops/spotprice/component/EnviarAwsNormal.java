@@ -36,14 +36,15 @@ public class EnviarAwsNormal {
 	private final long HORA = MINUTO * 60;
 	private final long DIA = HORA * 24;
 	private final long SEMANA = DIA * 7;
+	private final long MES = SEMANA * 4;
 
 	@Autowired
 	private InstanceNormalRepository instanceRepository;
 
 	String data;
 
-	// @Scheduled(fixedDelay = SEMANA)
-	public void init() {
+	// @Scheduled(fixedDelay = MES)
+	public void enviar() {
 
 		final String UrlPrincipal = "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/region_index.json";
 
@@ -96,7 +97,7 @@ public class EnviarAwsNormal {
 						atributeValue = matcher.group(1);
 						urlRegion = atributeValue;
 
-						percorrerRegion(urlRegion, region);
+						percorrerRegioes(urlRegion, region);
 
 					}
 
@@ -117,7 +118,7 @@ public class EnviarAwsNormal {
 
 	}
 
-	public void percorrerRegion(String urlRegion, String region) {
+	protected void percorrerRegioes(String urlRegion, String region) {
 
 		List<InstanceNormalAws> instanceList = new ArrayList<InstanceNormalAws>();
 
@@ -143,6 +144,7 @@ public class EnviarAwsNormal {
 
 			System.out.println(region);
 
+			// Percorre as linhas que especifica a REGIÃO, TIPO DE INSTÂNCIA E DATA DE ATUALIZAÇÃO
 			while (!onDemand) {
 
 				String regex = "\"([^\"]*)\"";
@@ -194,7 +196,7 @@ public class EnviarAwsNormal {
 
 				}
 
-				// product description
+				// product description e adiciona na lista de instâncias
 				if (linha.contains("operatingSystem")) {
 
 					st = new StringTokenizer(linha);
@@ -229,8 +231,10 @@ public class EnviarAwsNormal {
 
 			}
 
+			// Percorre as linhas que especifica o PREÇO.
+			
 			InstanceNormalAws instanceBuscada = null;
-
+			
 			while (linha != null) {
 
 				String regex = "\"([^\"]*)\"";
@@ -238,7 +242,9 @@ public class EnviarAwsNormal {
 				Matcher matcher;
 
 				String chaveInstance = null;
+				String price = null;
 
+				// Obtem a chave de referencia a instância na API
 				if (linha.contains("sku")) {
 
 					st = new StringTokenizer(linha);
@@ -253,11 +259,13 @@ public class EnviarAwsNormal {
 						chaveInstance = atributeValue;
 
 					}
-
+					
+					// Busca na lista de instância, qual instância pertence a chave de referência encontrada.
 					instanceBuscada = procurarInstance(instanceList, chaveInstance);
 
 				}
 
+				// Obtem o preço da instância, e envia para o banco de dados
 				if (linha.contains("\"USD\"")) {
 
 					st = new StringTokenizer(linha);
@@ -269,14 +277,15 @@ public class EnviarAwsNormal {
 					if (matcher.find()) {
 
 						atributeValue = matcher.group(1);
-						chaveInstance = atributeValue;
+						price = atributeValue;
 
 					}
-
-					instanceBuscada.setPrice(new BigDecimal(chaveInstance.substring(0, 6)));
+					
+					// Insere o preço e a data na instância encontrada 
+					instanceBuscada.setPrice(new BigDecimal(price.substring(0, 6)));
 					instanceBuscada.setDataReq(data);
 
-					enviar(instanceBuscada);
+					enviarParaBanco(instanceBuscada);
 
 				}
 
@@ -294,7 +303,7 @@ public class EnviarAwsNormal {
 
 	}
 
-	public InstanceNormalAws procurarInstance(List<InstanceNormalAws> list, String chaveInstance) {
+	protected InstanceNormalAws procurarInstance(List<InstanceNormalAws> list, String chaveInstance) {
 
 		InstanceNormalAws instance = new InstanceNormalAws();
 
@@ -317,7 +326,7 @@ public class EnviarAwsNormal {
 
 	}
 
-	public void enviar(InstanceNormalAws instance) {
+	protected void enviarParaBanco(InstanceNormalAws instance) {
 
 		BigDecimal valorZerado = new BigDecimal("0.000000");
 
@@ -349,6 +358,8 @@ public class EnviarAwsNormal {
 		}
 	}
 
+	// ------------ METODOS DE SQL --------
+	
 	protected InstanceNormalPrice selectInstancePrice(String cloudName, String instanceType, String region,
 			String productDescription) {
 
