@@ -29,7 +29,7 @@ public class EnviarAzureSpot {
 	private final long DIA = HORA * 24;
 	private final long SEMANA = DIA * 7;
 
-	// Pega o dia atual
+	// Pega o ano e mes atual
 	Date data = new Date(System.currentTimeMillis());
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
 

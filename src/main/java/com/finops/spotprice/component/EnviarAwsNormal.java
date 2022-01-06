@@ -8,7 +8,9 @@ import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -21,11 +23,7 @@ import org.springframework.stereotype.Component;
 
 import com.finops.spotprice.model.InstanceNormalAws;
 import com.finops.spotprice.persistence.entity.InstanceNormalPrice;
-import com.finops.spotprice.persistence.entity.SpotPrices;
 import com.finops.spotprice.persistence.repository.InstanceNormalRepository;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 @Component
 @EnableScheduling
@@ -144,7 +142,8 @@ public class EnviarAwsNormal {
 
 			System.out.println(region);
 
-			// Percorre as linhas que especifica a REGIÃO, TIPO DE INSTÂNCIA E DATA DE ATUALIZAÇÃO
+			// Percorre as linhas que especifica a REGIÃO, TIPO DE INSTÂNCIA E DATA DE
+			// ATUALIZAÇÃO
 			while (!onDemand) {
 
 				String regex = "\"([^\"]*)\"";
@@ -153,13 +152,6 @@ public class EnviarAwsNormal {
 
 				instance.setRegion(region);
 				instance.setCloudName("AWS");
-
-				// Obtem a data de atualização
-				if (linha.contains("publicationDate")) {
-
-					data = linha.substring(23, 33);
-
-				}
 
 				// instance Type
 				if (linha.contains("sku")) {
@@ -232,9 +224,11 @@ public class EnviarAwsNormal {
 			}
 
 			// Percorre as linhas que especifica o PREÇO.
-			
+
 			InstanceNormalAws instanceBuscada = null;
-			
+
+			boolean dadosAtualizados = false;
+
 			while (linha != null) {
 
 				String regex = "\"([^\"]*)\"";
@@ -259,33 +253,86 @@ public class EnviarAwsNormal {
 						chaveInstance = atributeValue;
 
 					}
-					
-					// Busca na lista de instância, qual instância pertence a chave de referência encontrada.
+
+					// Busca na lista de instância, qual instância pertence a chave de referência
+					// encontrada.
 					instanceBuscada = procurarInstance(instanceList, chaveInstance);
 
 				}
 
-				// Obtem o preço da instância, e envia para o banco de dados
-				if (linha.contains("\"USD\"")) {
+				// Obtem a chave de referencia a instância na API
+				if (linha.contains("effectiveDate")) {
 
-					st = new StringTokenizer(linha);
-					st.nextToken(":");
-					atributeValue = st.nextToken(":");
+					// Pega o ano e mes atual
+					Date date = new Date(System.currentTimeMillis());
+					SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
+					String anoMesAtual = sdf.format(date);
 
-					matcher = pattern.matcher(atributeValue);
+					// Obtem o ano atual e o ano anterior em INT
+					int anoAtual = Integer.parseInt(anoMesAtual.substring(0, 4));
+					int anoAnterior = anoAtual - 1;
 
-					if (matcher.find()) {
+					// Obtem o mes atual e mes anterior em INT
+					int mesAtual = Integer.parseInt(anoMesAtual.substring(5, 7));
+					int mesAnterior = mesAtual - 1;
 
-						atributeValue = matcher.group(1);
-						price = atributeValue;
+					// Se o mes anterior for igual a zero, ele é referente ao mês 12
+					if (mesAnterior == 0) {
+						mesAnterior = 12;
+					}
+
+					// Leitura da linha do arquivo que informa a data de atualização
+					data = linha.substring(29, 39);
+
+					String anoMesAnterior;
+
+					// Obtem a string que referencia o mês anterior
+					if (mesAnterior >= 10) {
+						anoMesAnterior = Integer.toString(anoAnterior) + "-" + Integer.toString(mesAnterior);
+					} else {
+						anoMesAnterior = Integer.toString(anoAnterior) + "-0" + Integer.toString(mesAnterior);
+					}
+
+					if (data.contains(anoMesAnterior) || data.contains(anoMesAtual)) {
+						dadosAtualizados = true;
+					}
+				
+				}
+
+				// Se os dados estiverem atualizados, entra no if que obtem o preço e envia para o banco de dados
+				if (dadosAtualizados) {
+
+					// Obtem o preço da instância, e envia para o banco de dados
+					if (linha.contains("\"USD\"")) {
+
+						st = new StringTokenizer(linha);
+						st.nextToken(":");
+						atributeValue = st.nextToken(":");
+
+						matcher = pattern.matcher(atributeValue);
+
+						if (matcher.find()) {
+
+							atributeValue = matcher.group(1);
+							price = atributeValue;
+
+						}
+
+						// Insere o preço e a data na instância encontrada
+						
+						if(price.length() < 6) {
+							instanceBuscada.setPrice(new BigDecimal(price.substring(0, 3)));
+						}else {
+							instanceBuscada.setPrice(new BigDecimal(price.substring(0, 6)));
+						}
+						
+						instanceBuscada.setDataReq(data);
+
+						enviarParaBanco(instanceBuscada);
+
+						dadosAtualizados = false;
 
 					}
-					
-					// Insere o preço e a data na instância encontrada 
-					instanceBuscada.setPrice(new BigDecimal(price.substring(0, 6)));
-					instanceBuscada.setDataReq(data);
-
-					enviarParaBanco(instanceBuscada);
 
 				}
 
@@ -359,7 +406,7 @@ public class EnviarAwsNormal {
 	}
 
 	// ------------ METODOS DE SQL --------
-	
+
 	protected InstanceNormalPrice selectInstancePrice(String cloudName, String instanceType, String region,
 			String productDescription) {
 
